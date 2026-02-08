@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Filter } from 'lucide-react';
 import { ClientCard } from '@/components/clients/client-card';
@@ -73,13 +74,15 @@ export function ClientGrid({ patients }: ClientGridProps) {
       >
         {filtered.map((patient) => (
           <motion.div key={patient.id} variants={cardItem}>
-            <ClientCard
-              id={patient.id}
-              firstName={patient.first_name}
-              lastName={patient.last_name}
-              dob={patient.dob}
-              status={patient.status}
-            />
+            <Link href={`/clients/${patient.id}`}>
+              <ClientCard
+                id={patient.id}
+                firstName={patient.first_name}
+                lastName={patient.last_name}
+                dob={patient.dob}
+                status={patient.status}
+              />
+            </Link>
           </motion.div>
         ))}
       </motion.div>

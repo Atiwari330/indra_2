@@ -4,6 +4,9 @@ import { motion } from 'motion/react';
 import { SidebarProvider, useSidebar } from './sidebar-provider';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
+import { AgentProvider } from '@/components/ai/agent-provider';
+import { CommandBar } from '@/components/ai/command-bar';
+import { SlideOver } from '@/components/ai/slide-over';
 import { gentle } from '@/lib/animations';
 import type { ReactNode } from 'react';
 
@@ -21,6 +24,8 @@ function ShellInner({ children }: { children: ReactNode }) {
       >
         <div className="p-8 lg:p-10">{children}</div>
       </motion.main>
+      <CommandBar />
+      <SlideOver />
     </div>
   );
 }
@@ -28,7 +33,9 @@ function ShellInner({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
-      <ShellInner>{children}</ShellInner>
+      <AgentProvider>
+        <ShellInner>{children}</ShellInner>
+      </AgentProvider>
     </SidebarProvider>
   );
 }

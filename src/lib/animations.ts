@@ -59,3 +59,59 @@ export const fadeIn = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: smooth },
 };
+
+// --- Slide-Over + Modal Variants ---
+
+/** Slide-over panel (right side) */
+export const slideOver = {
+  hidden: { x: '100%' },
+  visible: {
+    x: 0,
+    transition: smooth,
+  },
+  exit: {
+    x: '100%',
+    transition: { type: 'spring' as const, duration: 0.4, bounce: 0.05 },
+  },
+};
+
+/** Backdrop fade for modals / panels */
+export const backdropFade = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
+};
+
+/** Centered modal pop-in */
+export const modalPop = {
+  hidden: { opacity: 0, scale: 0.96, y: -10 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: smooth,
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.96,
+    y: -10,
+    transition: { duration: 0.15 },
+  },
+};
+
+/** Checkmark success animation */
+export const checkmarkPop = {
+  hidden: { scale: 0, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: bouncy,
+  },
+};
+
+/** Phase content transition */
+export const phaseTransition = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: smooth },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};
