@@ -1,15 +1,52 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Loader2, Check } from 'lucide-react';
-import type { AgentRun } from '@/lib/types/ai-agent';
+import type { AgentRun, ProcessingStep } from '@/lib/types/ai-agent';
 import { checkmarkPop, smooth } from '@/lib/animations';
 
 interface PhaseProcessingProps {
   run: AgentRun;
 }
 
+/**
+ * For synthetic steps (IDs starting with 'synth-'), we animate progress
+ * locally with a timer to create the illusion of activity during the
+ * 10-30s blocking backend call.
+ */
+function useSyntheticStepAnimation(steps: ProcessingStep[]): ProcessingStep[] {
+  const isSynthetic = steps.length > 0 && steps[0].id.startsWith('synth-');
+  const [cursor, setCursor] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!isSynthetic) {
+      setCursor(0);
+      return;
+    }
+
+    // Advance one step every ~2.5s, but don't advance past the last step
+    intervalRef.current = setInterval(() => {
+      setCursor((prev) => Math.min(prev + 1, steps.length - 1));
+    }, 2500);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isSynthetic, steps.length]);
+
+  if (!isSynthetic) return steps;
+
+  return steps.map((step, i) => ({
+    ...step,
+    status: i < cursor ? 'completed' : i === cursor ? 'active' : 'pending',
+  }));
+}
+
 export function PhaseProcessing({ run }: PhaseProcessingProps) {
+  const animatedSteps = useSyntheticStepAnimation(run.steps);
+
   return (
     <div>
       {/* User input */}
@@ -30,7 +67,7 @@ export function PhaseProcessing({ run }: PhaseProcessingProps) {
 
       {/* Steps */}
       <div className="space-y-3">
-        {run.steps.map((step, i) => (
+        {animatedSteps.map((step, i) => (
           <motion.div
             key={step.id}
             className="flex items-center gap-3"

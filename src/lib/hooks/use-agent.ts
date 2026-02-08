@@ -56,6 +56,36 @@ const TERMINAL: AgentStatus[] = [
   'failed',
 ];
 
+// ── Synthetic steps (shown while blocking call is in-flight) ───
+
+function makeSyntheticRun(inputText: string, labels: string[]): AgentRun {
+  return {
+    id: 'synth-pending',
+    status: 'running',
+    inputText,
+    steps: labels.map((label, i) => ({
+      id: `synth-${i}`,
+      label,
+      status: i === 0 ? 'active' : 'pending' as const,
+    })),
+    clarifications: [],
+    proposedActions: [],
+  };
+}
+
+const SUBMIT_STEPS = [
+  'Understanding your request',
+  'Loading clinical context',
+  'Processing with AI',
+  'Preparing results',
+];
+
+const CLARIFICATION_STEPS = [
+  'Processing your answers',
+  'Continuing AI analysis',
+  'Preparing results',
+];
+
 // ── Hook ────────────────────────────────────────────────────────
 
 export function useAgent() {
@@ -114,10 +144,18 @@ export function useAgent() {
       dispatch({ type: 'CLOSE_COMMAND_BAR' });
       dispatch({ type: 'OPEN_SLIDE_OVER' });
 
+      // Show synthetic processing UI immediately while the blocking call runs
+      dispatch({ type: 'SET_RUN', run: makeSyntheticRun(input, SUBMIT_STEPS) });
+
       try {
         const run = await serviceRef.current.submitIntent(input, patientId);
         dispatch({ type: 'SET_RUN', run });
-        startPolling(run.id);
+
+        // Only poll if the returned status is non-terminal (mock returns pending)
+        // Real service returns terminal states directly (blocking call)
+        if (!TERMINAL.includes(run.status)) {
+          startPolling(run.id);
+        }
       } catch {
         dispatch({
           type: 'SET_RUN',
@@ -139,13 +177,22 @@ export function useAgent() {
   const respondToClarification = useCallback(
     async (answers: Record<string, string>) => {
       if (!state.run) return;
+
+      // Show synthetic processing UI while the blocking clarification response runs
+      dispatch({
+        type: 'SET_RUN',
+        run: makeSyntheticRun(state.run.inputText, CLARIFICATION_STEPS),
+      });
+
       try {
         const updated = await serviceRef.current.respondToClarification(
           state.run.id,
           answers
         );
         dispatch({ type: 'SET_RUN', run: updated });
-        if (updated.status === 'running') {
+
+        // Only poll if non-terminal
+        if (!TERMINAL.includes(updated.status)) {
           startPolling(updated.id);
         }
       } catch {
