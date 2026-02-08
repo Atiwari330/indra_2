@@ -10,7 +10,13 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange, placeholder = 'Search...' }: SearchInputProps) {
   return (
-    <div className="glass-subtle relative flex items-center rounded-[var(--radius-full)] px-3 py-2">
+    <div
+      className="relative flex items-center rounded-[var(--radius-full)] px-3 py-2 transition-shadow focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-[var(--color-accent)]"
+      style={{
+        background: 'var(--color-bg-primary)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
       <Search
         size={16}
         strokeWidth={1.8}

@@ -35,3 +35,17 @@ export function formatDate(dateString: string): string {
 export function formatName(firstName: string, lastName: string): string {
   return `${firstName} ${lastName}`;
 }
+
+/**
+ * Compute age in years from a date-of-birth string (YYYY-MM-DD).
+ */
+export function computeAge(dob: string): number {
+  const birth = new Date(dob + 'T00:00:00');
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}

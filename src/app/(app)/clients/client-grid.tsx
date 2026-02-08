@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { Filter } from 'lucide-react';
 import { ClientCard } from '@/components/clients/client-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { PageHeader } from '@/components/ui/page-header';
@@ -37,19 +38,35 @@ export function ClientGrid({ patients }: ClientGridProps) {
       <PageHeader
         title="Clients"
         subtitle={`${activeCount} active client${activeCount !== 1 ? 's' : ''}`}
-        actions={
-          <div className="w-64">
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search clients..."
-            />
-          </div>
+        toolbar={
+          <>
+            <div className="w-64">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Search clients..."
+              />
+            </div>
+            <button
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-callout transition-colors"
+              style={{
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <Filter size={14} strokeWidth={1.8} />
+              Status
+            </button>
+            <div className="flex-1" />
+            <span className="text-footnote" style={{ color: 'var(--color-text-tertiary)' }}>
+              {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+            </span>
+          </>
         }
       />
 
       <motion.div
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         variants={staggerContainer}
         initial="hidden"
         animate="show"

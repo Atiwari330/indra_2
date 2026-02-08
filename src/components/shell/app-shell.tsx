@@ -11,15 +11,15 @@ function ShellInner({ children }: { children: ReactNode }) {
   const { expanded } = useSidebar();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen w-full overflow-x-hidden">
       <Sidebar />
       <TopBar />
       <motion.main
-        className="pt-[var(--topbar-height)]"
+        style={{ paddingTop: 56 }}
         animate={{ paddingLeft: expanded ? 260 : 72 }}
         transition={gentle}
       >
-        <div className="p-6 lg:p-8">{children}</div>
+        <div className="p-8 lg:p-10">{children}</div>
       </motion.main>
     </div>
   );

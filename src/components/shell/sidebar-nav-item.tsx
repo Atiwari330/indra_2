@@ -20,24 +20,28 @@ export function SidebarNavItem({ href, label, icon: Icon }: SidebarNavItemProps)
   return (
     <Link
       href={href}
-      className="relative flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 transition-colors"
+      className="relative flex items-center gap-3 px-3 py-2.5 transition-colors"
       style={{
+        borderRadius: 10,
         color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
       }}
     >
       {isActive && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className="absolute inset-0 rounded-[var(--radius-sm)]"
-          style={{ background: 'var(--color-accent)', opacity: 0.1 }}
+          className="absolute inset-0"
+          style={{
+            borderRadius: 10,
+            background: 'var(--color-nav-active-bg)',
+          }}
           transition={{ type: 'spring', duration: 0.5, bounce: 0.15 }}
         />
       )}
-      <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+      <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} className="relative" />
       {expanded && (
         <span
-          className="text-callout"
-          style={{ fontWeight: isActive ? 600 : 400 }}
+          className="text-callout relative"
+          style={{ fontWeight: isActive ? 600 : 500 }}
         >
           {label}
         </span>
