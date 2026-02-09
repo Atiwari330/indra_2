@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { uuidFormat } from './shared';
 
 export const NoteType = z.enum(['SOAP', 'DAP', 'BIRP', 'intake', 'discharge']);
 export const NoteStatus = z.enum(['draft', 'signed', 'amended', 'addended']);
@@ -34,8 +35,8 @@ export const RiskAssessment = z.object({
 });
 
 export const CreateNoteDraftInput = z.object({
-  encounter_id: z.string().uuid().optional(),
-  ai_run_id: z.string().uuid().optional(),
+  encounter_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
+  ai_run_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
   source_transcript: z.string().optional(),
   note_type: NoteType,
   generated_content: NoteContent,
@@ -43,20 +44,20 @@ export const CreateNoteDraftInput = z.object({
 export type CreateNoteDraftInput = z.infer<typeof CreateNoteDraftInput>;
 
 export const AcceptNoteDraftInput = z.object({
-  draft_id: z.string().uuid(),
+  draft_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
   provider_edits: NoteContent.optional(),
 });
 export type AcceptNoteDraftInput = z.infer<typeof AcceptNoteDraftInput>;
 
 export const SignNoteInput = z.object({
-  note_id: z.string().uuid(),
-  provider_id: z.string().uuid(),
+  note_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
+  provider_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
 });
 
 export const AmendNoteInput = z.object({
-  note_id: z.string().uuid(),
+  note_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
   content: NoteContent,
   reason: z.string().min(1),
-  provider_id: z.string().uuid(),
+  provider_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
 });
 export type AmendNoteInput = z.infer<typeof AmendNoteInput>;

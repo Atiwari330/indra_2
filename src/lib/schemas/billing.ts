@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { uuidFormat } from './shared';
 
 export const ClaimLineItemInput = z.object({
   line_number: z.number().int().min(1),
@@ -18,10 +19,10 @@ export const ClaimDiagnosisInput = z.object({
 });
 
 export const CreateClaimInput = z.object({
-  encounter_id: z.string().uuid(),
-  patient_id: z.string().uuid(),
-  provider_id: z.string().uuid(),
-  patient_insurance_id: z.string().uuid().optional(),
+  encounter_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
+  patient_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
+  provider_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
+  patient_insurance_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
   date_of_service: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   place_of_service: z.string().max(2).default('11'),
   diagnoses: z.array(ClaimDiagnosisInput).min(1).max(12),

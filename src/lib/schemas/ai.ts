@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { uuidFormat } from './shared';
 
 export const IntentInput = z.object({
   text: z.string().min(1).max(10000),
-  patient_id: z.string().uuid().optional(),
-  encounter_id: z.string().uuid().optional(),
+  patient_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
+  encounter_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
   idempotency_key: z.string().optional(),
 });
 export type IntentInput = z.infer<typeof IntentInput>;

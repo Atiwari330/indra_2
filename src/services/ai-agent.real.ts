@@ -206,9 +206,9 @@ async function apiFetch<T>(
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(
-        (body as { error?: string }).error ?? `API error ${res.status}`
-      );
+      const errMsg = (body as { error?: string }).error ?? `API error ${res.status}`;
+      console.error(`[AI Service] ${fetchOpts?.method ?? 'GET'} ${path} failed:`, errMsg);
+      throw new Error(errMsg);
     }
 
     return (await res.json()) as T;

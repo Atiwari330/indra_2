@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     const parsed = IntentInput.safeParse(body);
 
     if (!parsed.success) {
+      console.error('[AI Intent] Validation error:', parsed.error.message, '| Body:', JSON.stringify(body));
       return errorResponse(`Validation error: ${parsed.error.message}`, 400);
     }
 
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     return jsonResponse(result);
   } catch (error) {
+    console.error('[AI Intent] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return errorResponse(message, 500);
   }

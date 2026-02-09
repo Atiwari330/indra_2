@@ -19,6 +19,7 @@ export async function GET(
 
     return jsonResponse(result);
   } catch (error) {
+    console.error('[AI Run GET] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return errorResponse(message, 500);
   }

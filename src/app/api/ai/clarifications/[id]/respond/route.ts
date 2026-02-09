@@ -15,6 +15,7 @@ export async function POST(
     const parsed = ClarificationResponse.safeParse(body);
 
     if (!parsed.success) {
+      console.error('[AI Clarification] Validation error:', parsed.error.message, '| Body:', JSON.stringify(body));
       return errorResponse(`Validation error: ${parsed.error.message}`, 400);
     }
 
@@ -50,6 +51,7 @@ export async function POST(
 
     return jsonResponse(result);
   } catch (error) {
+    console.error('[AI Clarification] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return errorResponse(message, 500);
   }

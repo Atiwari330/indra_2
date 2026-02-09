@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { uuidFormat } from './shared';
 
 export const EncounterType = z.enum([
   'individual_therapy', 'group_therapy', 'family_therapy',
@@ -10,13 +11,13 @@ export const EncounterStatus = z.enum([
 ]);
 
 export const CreateEncounterInput = z.object({
-  patient_id: z.string().uuid(),
-  provider_id: z.string().uuid(),
+  patient_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
+  provider_id: z.string().regex(uuidFormat, 'Invalid UUID format'),
   encounter_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   encounter_type: EncounterType,
   status: EncounterStatus.default('in_progress'),
   duration_minutes: z.number().int().min(1).max(480).optional(),
   place_of_service: z.string().max(2).default('11'),
-  appointment_id: z.string().uuid().optional(),
+  appointment_id: z.string().regex(uuidFormat, 'Invalid UUID format').optional(),
 });
 export type CreateEncounterInput = z.infer<typeof CreateEncounterInput>;

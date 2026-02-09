@@ -32,6 +32,7 @@ export async function POST(
 
     return jsonResponse(result);
   } catch (error) {
+    console.error('[AI Commit] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return errorResponse(message, 500);
   }
