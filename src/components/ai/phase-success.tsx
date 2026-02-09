@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Check } from 'lucide-react';
+import { Check, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
 import { checkmarkPop } from '@/lib/animations';
@@ -13,12 +13,18 @@ interface PhaseSuccessProps {
 
 export function PhaseSuccess({ run }: PhaseSuccessProps) {
   const { dismiss } = useAgentContext();
+  const router = useRouter();
 
-  // Auto-dismiss after 3 seconds
-  useEffect(() => {
-    const timer = setTimeout(dismiss, 3000);
-    return () => clearTimeout(timer);
-  }, [dismiss]);
+  const handleViewNote = () => {
+    dismiss();
+    // Refresh server data so the new note appears in "Recent Notes"
+    router.refresh();
+  };
+
+  const handleDone = () => {
+    dismiss();
+    router.refresh();
+  };
 
   return (
     <div className="flex flex-col items-center justify-center py-12">
@@ -49,17 +55,28 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
         </p>
       )}
 
-      <button
-        onClick={dismiss}
-        className="rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium transition-colors"
-        style={{
-          background: 'var(--color-bg-tertiary)',
-          color: 'var(--color-text-primary)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        Done
-      </button>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        <button
+          onClick={handleViewNote}
+          className="flex items-center justify-center gap-2 rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium text-white transition-opacity"
+          style={{ background: 'var(--color-accent)' }}
+        >
+          <FileText size={16} strokeWidth={1.8} />
+          View in Chart
+        </button>
+
+        <button
+          onClick={handleDone}
+          className="rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium transition-colors"
+          style={{
+            background: 'var(--color-bg-tertiary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          Done
+        </button>
+      </div>
     </div>
   );
 }

@@ -202,13 +202,35 @@ async function executeAction(
 
     case 'create_note_draft': {
       validateRequiredFields(payload, 'create_note_draft', ['encounter_id', 'note_type', 'content']);
-      return noteService.createNoteDraft(client, orgId, {
+      const draft = await noteService.createNoteDraft(client, orgId, {
         encounter_id: payload.encounter_id as string,
         ai_run_id: payload.ai_run_id as string | undefined,
         source_transcript: payload.source_transcript as string | undefined,
         note_type: payload.note_type as 'SOAP' | 'DAP' | 'BIRP' | 'intake' | 'discharge',
         generated_content: payload.content as { data: string; assessment: string; plan: string },
       });
+
+      // Auto-accept: create a clinical_notes record so the note appears in the patient chart
+      const encounterId = payload.encounter_id as string;
+      const { data: encounter } = await client
+        .from('encounters')
+        .select('patient_id')
+        .eq('id', encounterId)
+        .single();
+
+      if (encounter?.patient_id) {
+        const clinicalNote = await noteService.acceptNoteDraft(
+          client,
+          orgId,
+          draft.id,
+          providerId,
+          encounterId,
+          encounter.patient_id,
+        );
+        return clinicalNote;
+      }
+
+      return draft;
     }
 
     case 'create_appointment': {

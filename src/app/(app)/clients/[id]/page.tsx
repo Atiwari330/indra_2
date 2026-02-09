@@ -46,7 +46,7 @@ export default async function PatientPage({ params }: Props) {
 
     supabase
       .from('clinical_notes')
-      .select('id, note_type, status, created_at')
+      .select('id, note_type, content, status, created_at, signed_at')
       .eq('patient_id', id)
       .eq('org_id', DEV_ORG_ID)
       .eq('is_current', true)

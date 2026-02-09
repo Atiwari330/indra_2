@@ -8,28 +8,14 @@ const SOAPContent = z.object({
   plan: z.string().describe('Treatment plan — next steps, interventions, follow-up'),
 });
 
-const DAPContent = z.object({
-  data: z.string().describe('Subjective and objective data combined — what happened in session'),
-  assessment: z.string().describe('Clinical assessment — diagnosis, progress, formulation'),
-  plan: z.string().describe('Treatment plan — next steps, homework, follow-up'),
-});
-
-const BIRPContent = z.object({
-  behavior: z.string().describe('Observable behavior and client presentation'),
-  intervention: z.string().describe('Therapeutic interventions used during session'),
-  response: z.string().describe('Client response to interventions'),
-  plan: z.string().describe('Plan for continued treatment'),
-});
-
 export function createProgressNoteTool(
   runId: string
 ) {
   return tool({
-    description: 'Generate a structured progress note based on the provider\'s session description. The note will be saved as a draft for provider review, NOT directly to the medical record.',
+    description: 'Generate a structured SOAP progress note based on the provider\'s session description. The note will be saved as a draft for provider review, NOT directly to the medical record.',
     inputSchema: z.object({
       encounter_id: z.string().describe('Encounter UUID from resolve_encounter'),
-      note_format: z.enum(['SOAP', 'DAP', 'BIRP']).describe('Note format to use'),
-      content: z.union([SOAPContent, DAPContent, BIRPContent]).describe('Structured note content'),
+      content: SOAPContent.describe('Structured SOAP note content'),
       risk_assessment: z.object({
         suicidal_ideation: z.boolean().default(false),
         homicidal_ideation: z.boolean().default(false),
@@ -39,9 +25,9 @@ export function createProgressNoteTool(
       assumptions_made: z.array(z.string()).describe('List of assumptions made when generating this note. Be transparent about what was inferred vs explicitly stated by the provider.'),
       session_duration_minutes: z.number().optional().describe('Session duration in minutes'),
     }),
-    execute: async ({ encounter_id, note_format, content, assumptions_made, session_duration_minutes }) => {
+    execute: async ({ encounter_id, content, assumptions_made, session_duration_minutes }) => {
       return {
-        note_type: note_format,
+        note_type: 'SOAP',
         status: 'proposed',
         assumptions_made,
         session_duration_minutes,
@@ -52,7 +38,7 @@ export function createProgressNoteTool(
           payload: {
             encounter_id,
             ai_run_id: runId,
-            note_type: note_format,
+            note_type: 'SOAP',
             content,
           },
         },

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FileText, Pill, CalendarPlus, Receipt, Stethoscope, ChevronDown, AlertTriangle } from 'lucide-react';
 import type { ProposedAction } from '@/lib/types/ai-agent';
 import { smooth } from '@/lib/animations';
+import { SOAPNoteContent } from '@/components/notes/soap-note-content';
 
 const ACTION_ICONS: Record<string, typeof FileText> = {
   encounter: Stethoscope,
@@ -93,17 +94,29 @@ export function ActionCard({ action }: ActionCardProps) {
                 transition={smooth}
                 className="overflow-hidden"
               >
-                <pre
-                  className="mt-2 rounded-[var(--radius-sm)] p-3 text-caption"
-                  style={{
-                    background: 'var(--color-bg-tertiary)',
-                    color: 'var(--color-text-secondary)',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {JSON.stringify(action.payload, null, 2)}
-                </pre>
+                {action.actionType === 'note' && action.payload?.content ? (
+                  <div
+                    className="mt-2 rounded-[var(--radius-sm)] p-3"
+                    style={{ background: 'var(--color-bg-tertiary)' }}
+                  >
+                    <SOAPNoteContent
+                      content={action.payload.content as Record<string, string>}
+                      compact
+                    />
+                  </div>
+                ) : (
+                  <pre
+                    className="mt-2 rounded-[var(--radius-sm)] p-3 text-caption"
+                    style={{
+                      background: 'var(--color-bg-tertiary)',
+                      color: 'var(--color-text-secondary)',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {JSON.stringify(action.payload, null, 2)}
+                  </pre>
+                )}
 
                 {action.assumptions && action.assumptions.length > 0 && (
                   <div className="mt-2 space-y-1">

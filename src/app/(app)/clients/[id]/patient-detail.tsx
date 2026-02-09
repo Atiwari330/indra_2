@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import {
@@ -12,6 +13,7 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AIInputBar } from '@/components/ai/ai-input-bar';
+import { NoteDetail } from '@/components/notes/note-detail';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
 
@@ -43,8 +45,10 @@ interface PatientDetailProps {
   recentNotes: {
     id: string;
     note_type: string;
+    content: unknown;
     status: string;
     created_at: string;
+    signed_at: string | null;
   }[];
   upcomingAppointments: {
     id: string;
@@ -62,6 +66,17 @@ export function PatientDetail({
   recentNotes,
   upcomingAppointments,
 }: PatientDetailProps) {
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [notes, setNotes] = useState(recentNotes);
+
+  const handleNoteSigned = useCallback((noteId: string) => {
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === noteId ? { ...n, status: 'signed', signed_at: new Date().toISOString() } : n
+      )
+    );
+  }, []);
+
   const age = computeAge(patient.dob);
   const fullName = formatName(patient.first_name, patient.last_name);
 
@@ -173,11 +188,15 @@ export function PatientDetail({
             icon={<FileText size={18} strokeWidth={1.8} />}
             title="Recent Notes"
             emptyText="No notes yet"
-            isEmpty={recentNotes.length === 0}
+            isEmpty={notes.length === 0}
           >
             <div className="space-y-2">
-              {recentNotes.map((n) => (
-                <div key={n.id} className="flex items-center justify-between">
+              {notes.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => setSelectedNoteId(n.id)}
+                  className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-2 py-1.5 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]"
+                >
                   <div>
                     <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
                       {n.note_type} note
@@ -199,7 +218,7 @@ export function PatientDetail({
                   >
                     {n.status}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </InfoCard>
@@ -247,6 +266,13 @@ export function PatientDetail({
       <div className="fixed bottom-6 left-0 right-0 z-30 mx-auto px-8 lg:px-10" style={{ maxWidth: 720 }}>
         <AIInputBar patientName={patient.first_name} patientId={patient.id} />
       </div>
+
+      {/* Note Viewer */}
+      <NoteDetail
+        noteId={selectedNoteId}
+        onClose={() => setSelectedNoteId(null)}
+        onSigned={handleNoteSigned}
+      />
     </div>
   );
 }
