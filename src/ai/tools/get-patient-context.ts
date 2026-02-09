@@ -44,7 +44,9 @@ export function createGetPatientContextTool(client: SupabaseClient<Database>, or
             date: n.created_at?.split('T')[0],
             type: n.note_type,
             plan_section: content?.plan ?? null,
+            clinical_observations: i === 0 ? (content?.data ?? content?.subjective ?? null) : undefined,
             objective_section: i === 0 ? (content?.objective ?? null) : undefined,
+            assessment_section: i === 0 ? (content?.assessment ?? null) : undefined,
             risk_assessment: riskAssessment ?? null,
           };
         }),

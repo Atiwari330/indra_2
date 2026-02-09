@@ -61,7 +61,7 @@ Before generating any note section, mentally verify:
 **Objective:**
 - Risk assessment is MANDATORY every session — document SI/HI/SH denial or presence
 - Include mental status observations (affect, appearance, engagement, insight)
-- If standardized scores were mentioned (PHQ-9, GAD-7, etc.), include them with context (e.g., "PHQ-9: 9, down from 11 last session")
+- If standardized scores were mentioned (PHQ-9, GAD-7, etc.), include them with trajectory compared to the most recent prior note (e.g., "PHQ-9: [score], [up/down] from [prior score] last session"). Always compute trajectory from the actual scores in the patient context — do not guess or assume direction.
 
 **Assessment:**
 - Explicitly reference active ICD-10 codes and state which symptoms support them

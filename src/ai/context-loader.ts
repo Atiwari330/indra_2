@@ -43,12 +43,21 @@ export async function loadPatientContextForPrompt(
 
       lines.push(`  [${n.created_at?.split('T')[0]} ${n.note_type}]`);
 
-      // First note: full plan + risk + interventions
+      // First note: clinical observations + assessment + plan + risk
       if (i === 0 && content) {
-        if (planSection) lines.push(`    Plan: ${planSection}`);
-        if (content.objective) {
-          lines.push(`    Objective highlights: ${content.objective.length > 300 ? content.objective.slice(0, 300) + '...' : content.objective}`);
+        // Clinical observations: DAP uses 'data', SOAP uses 'subjective' + 'objective'
+        const observations = content.data ?? content.subjective ?? null;
+        const objective = content.objective ?? null;
+        if (observations) {
+          lines.push(`    Clinical observations: ${observations.length > 400 ? observations.slice(0, 400) + '...' : observations}`);
         }
+        if (objective) {
+          lines.push(`    Objective: ${objective.length > 300 ? objective.slice(0, 300) + '...' : objective}`);
+        }
+        if (content.assessment) {
+          lines.push(`    Assessment: ${content.assessment.length > 300 ? content.assessment.slice(0, 300) + '...' : content.assessment}`);
+        }
+        if (planSection) lines.push(`    Last session plan: ${planSection}`);
       } else {
         // 2nd/3rd notes: plan section only
         if (planSection) lines.push(`    Plan: ${planSection.length > 200 ? planSection.slice(0, 200) + '...' : planSection}`);
