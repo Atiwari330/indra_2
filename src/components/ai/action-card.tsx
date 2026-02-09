@@ -27,6 +27,51 @@ interface ActionCardProps {
   action: ProposedAction;
 }
 
+function BillingContent({ payload }: { payload: Record<string, unknown> }) {
+  const cptCode = payload.cpt_code as string | undefined;
+  const description = payload.description as string | undefined;
+  const diagnosisCodes = payload.diagnosis_codes as string[] | undefined;
+  const units = payload.units as number | undefined;
+
+  return (
+    <div className="space-y-2">
+      {cptCode && (
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-[var(--radius-sm)] px-2 py-1 text-callout font-semibold"
+            style={{
+              background: `color-mix(in srgb, var(--color-accent) 10%, transparent)`,
+              color: 'var(--color-accent)',
+            }}
+          >
+            {cptCode}
+          </span>
+          {units != null && (
+            <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+              {units} {units === 1 ? 'unit' : 'units'}
+            </span>
+          )}
+        </div>
+      )}
+      {description && (
+        <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
+          {description}
+        </p>
+      )}
+      {diagnosisCodes && diagnosisCodes.length > 0 && (
+        <div>
+          <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+            Diagnosis codes
+          </p>
+          <p className="text-callout" style={{ color: 'var(--color-text-secondary)' }}>
+            {diagnosisCodes.join(', ')}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ActionCard({ action }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const Icon = ACTION_ICONS[action.actionType] || FileText;
@@ -103,6 +148,13 @@ export function ActionCard({ action }: ActionCardProps) {
                       content={action.payload.content as Record<string, string>}
                       compact
                     />
+                  </div>
+                ) : action.actionType === 'billing' && action.payload ? (
+                  <div
+                    className="mt-2 rounded-[var(--radius-sm)] p-3"
+                    style={{ background: 'var(--color-bg-tertiary)' }}
+                  >
+                    <BillingContent payload={action.payload as Record<string, unknown>} />
                   </div>
                 ) : (
                   <pre

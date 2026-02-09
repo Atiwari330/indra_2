@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import {
@@ -68,6 +68,28 @@ export function PatientDetail({
 }: PatientDetailProps) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [notes, setNotes] = useState(recentNotes);
+  const pendingViewNoteRef = useRef(false);
+
+  useEffect(() => {
+    setNotes(recentNotes);
+  }, [recentNotes]);
+
+  // Listen for "View in Chart" event from phase-success
+  useEffect(() => {
+    const handler = () => {
+      pendingViewNoteRef.current = true;
+    };
+    window.addEventListener('indra:view-note', handler);
+    return () => window.removeEventListener('indra:view-note', handler);
+  }, []);
+
+  // When recentNotes updates and a view-note is pending, auto-open the newest note
+  useEffect(() => {
+    if (pendingViewNoteRef.current && recentNotes.length > 0) {
+      pendingViewNoteRef.current = false;
+      setSelectedNoteId(recentNotes[0].id);
+    }
+  }, [recentNotes]);
 
   const handleNoteSigned = useCallback((noteId: string) => {
     setNotes((prev) =>

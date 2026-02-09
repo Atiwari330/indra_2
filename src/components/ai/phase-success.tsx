@@ -5,6 +5,7 @@ import { Check, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
+import { Markdown } from '@/components/ui/markdown';
 import { checkmarkPop } from '@/lib/animations';
 
 interface PhaseSuccessProps {
@@ -16,8 +17,9 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
   const router = useRouter();
 
   const handleViewNote = () => {
+    // Signal patient-detail to auto-open the newest note after refresh
+    window.dispatchEvent(new CustomEvent('indra:view-note'));
     dismiss();
-    // Refresh server data so the new note appears in "Recent Notes"
     router.refresh();
   };
 
@@ -47,12 +49,9 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
       </h3>
 
       {run.summary && (
-        <p
-          className="mb-8 max-w-sm text-center text-callout"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          {run.summary}
-        </p>
+        <div className="mb-8 max-w-sm text-center text-callout">
+          <Markdown text={run.summary} />
+        </div>
       )}
 
       <div className="flex flex-col gap-3 w-full max-w-xs">

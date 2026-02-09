@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
 import { ActionCard } from './action-card';
+import { Markdown } from '@/components/ui/markdown';
 import { smooth } from '@/lib/animations';
 
 interface PhaseReviewProps {
@@ -17,9 +18,9 @@ export function PhaseReview({ run }: PhaseReviewProps) {
     <div className="flex h-full flex-col">
       {/* Summary */}
       {run.summary && (
-        <p className="mb-5 text-callout" style={{ color: 'var(--color-text-secondary)' }}>
-          {run.summary}
-        </p>
+        <div className="mb-5 text-callout">
+          <Markdown text={run.summary} />
+        </div>
       )}
 
       {/* Action cards */}
