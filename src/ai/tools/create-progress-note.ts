@@ -22,10 +22,14 @@ export function createProgressNoteTool(
         self_harm: z.boolean().default(false),
         details: z.string().optional(),
       }).describe('Risk assessment — REQUIRED every session. Document SI/HI/SH denial or presence.'),
+      standardized_scores: z.array(z.object({
+        measure_type: z.enum(['PHQ-9', 'GAD-7', 'PCL-5', 'AUDIT-C', 'CSSRS']),
+        score: z.number(),
+      })).optional().describe('Standardized assessment scores administered this session'),
       assumptions_made: z.array(z.string()).describe('List of assumptions made when generating this note. Be transparent about what was inferred vs explicitly stated by the provider.'),
       session_duration_minutes: z.number().optional().describe('Session duration in minutes'),
     }),
-    execute: async ({ encounter_id, content, risk_assessment, assumptions_made, session_duration_minutes }) => {
+    execute: async ({ encounter_id, content, risk_assessment, standardized_scores, assumptions_made, session_duration_minutes }) => {
       const hasRisk = risk_assessment.suicidal_ideation || risk_assessment.homicidal_ideation || risk_assessment.self_harm;
       console.log(`[tool:create_progress_note] Note proposed for encounter ${encounter_id} | risk_assessment: yes (${hasRisk ? 'FLAGGED' : 'no SI/HI/SH'}) | assumptions: ${assumptions_made.length}`);
 
@@ -44,6 +48,7 @@ export function createProgressNoteTool(
             note_type: 'SOAP',
             content,
             risk_assessment,
+            standardized_scores,
           },
         },
       };

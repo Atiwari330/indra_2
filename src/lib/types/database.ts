@@ -360,6 +360,64 @@ export type Database = {
           },
         ]
       }
+      assessment_scores: {
+        Row: {
+          administered_at: string
+          created_at: string
+          encounter_id: string | null
+          id: string
+          measure_type: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id: string
+          patient_id: string
+          score: number
+          source: Database["public"]["Enums"]["assessment_score_source"]
+        }
+        Insert: {
+          administered_at?: string
+          created_at?: string
+          encounter_id?: string | null
+          id?: string
+          measure_type: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id: string
+          patient_id: string
+          score: number
+          source?: Database["public"]["Enums"]["assessment_score_source"]
+        }
+        Update: {
+          administered_at?: string
+          created_at?: string
+          encounter_id?: string | null
+          id?: string
+          measure_type?: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id?: string
+          patient_id?: string
+          score?: number
+          source?: Database["public"]["Enums"]["assessment_score_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scores_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_scores_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -1471,6 +1529,8 @@ export type Database = {
         | "failed"
       ai_step_type: "llm_call" | "tool_call" | "tool_result" | "error"
       appointment_status: "scheduled" | "completed" | "cancelled" | "no_show"
+      assessment_measure_type: "PHQ-9" | "GAD-7" | "PCL-5" | "AUDIT-C" | "CSSRS"
+      assessment_score_source: "ai_tool" | "manual_entry" | "client_portal"
       claim_status:
         | "draft"
         | "ready"
@@ -1650,6 +1710,8 @@ export const Constants = {
       ],
       ai_step_type: ["llm_call", "tool_call", "tool_result", "error"],
       appointment_status: ["scheduled", "completed", "cancelled", "no_show"],
+      assessment_measure_type: ["PHQ-9", "GAD-7", "PCL-5", "AUDIT-C", "CSSRS"],
+      assessment_score_source: ["ai_tool", "manual_entry", "client_portal"],
       claim_status: [
         "draft",
         "ready",

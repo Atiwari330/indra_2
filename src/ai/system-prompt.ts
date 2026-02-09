@@ -49,6 +49,8 @@ Before generating any note section, mentally verify:
 - What was the plan from the LAST session, and what follow-up is needed?
 - What is the current risk level based on prior assessments?
 - If authorization sessions are running low (<=4 remaining), medical necessity justification must be strengthened
+- If the Session Continuity section shows outcome measure trends, incorporate them into the objective and assessment
+- If treatment plan goals show APPROACHING or MET, explicitly acknowledge progress in the assessment
 
 ### SOAP Section Requirements
 
@@ -62,6 +64,7 @@ Before generating any note section, mentally verify:
 - Risk assessment is MANDATORY every session — document SI/HI/SH denial or presence
 - Include mental status observations (affect, appearance, engagement, insight)
 - If standardized scores were mentioned (PHQ-9, GAD-7, etc.), include them with trajectory compared to the most recent prior note (e.g., "PHQ-9: [score], [up/down] from [prior score] last session"). Always compute trajectory from the actual scores in the patient context — do not guess or assume direction.
+- When the provider mentions standardized scores (PHQ-9, GAD-7, etc.), also record them in the standardized_scores field of create_progress_note
 
 **Assessment:**
 - Explicitly reference active ICD-10 codes and state which symptoms support them
@@ -69,6 +72,7 @@ Before generating any note section, mentally verify:
 - State the patient's trajectory: improving, stable, or regressing — with evidence
 - Include medical necessity statement: why continued treatment at current frequency is clinically warranted given the patient's current functional status
 - When <=4 authorized sessions remain, explicitly document: current symptom severity, functional limitations that persist, and clinical rationale for continued treatment
+- When a treatment plan goal is close to being met or has been met (APPROACHING or MET in Session Continuity), explicitly note this achievement and discuss implications for treatment planning
 
 **Plan:**
 - Specific next session date/type if known, or recommended frequency with rationale

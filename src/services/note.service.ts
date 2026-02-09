@@ -31,7 +31,8 @@ export async function acceptNoteDraft(
   providerId: string,
   encounterId: string,
   patientId: string,
-  providerEdits?: NoteContent
+  providerEdits?: NoteContent,
+  riskAssessment?: Record<string, unknown>
 ) {
   // Get the draft
   const { data: draft, error: draftError } = await client
@@ -56,6 +57,9 @@ export async function acceptNoteDraft(
       org_id: orgId,
       note_type: draft.note_type,
       content: content as unknown as Database['public']['Tables']['clinical_notes']['Insert']['content'],
+      risk_assessment: riskAssessment
+        ? (riskAssessment as unknown as Database['public']['Tables']['clinical_notes']['Insert']['risk_assessment'])
+        : undefined,
       status: 'draft',
     })
     .select()

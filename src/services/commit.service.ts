@@ -226,7 +226,31 @@ async function executeAction(
           providerId,
           encounterId,
           encounter.patient_id,
+          undefined,
+          payload.risk_assessment as Record<string, unknown> | undefined,
         );
+
+        // Write standardized assessment scores if present
+        const scores = payload.standardized_scores as Array<{ measure_type: string; score: number }> | undefined;
+        if (scores && scores.length > 0) {
+          try {
+            await client
+              .from('assessment_scores')
+              .insert(
+                scores.map(s => ({
+                  encounter_id: encounterId,
+                  patient_id: encounter.patient_id,
+                  org_id: orgId,
+                  measure_type: s.measure_type as Database['public']['Enums']['assessment_measure_type'],
+                  score: s.score,
+                  source: 'ai_tool' as Database['public']['Enums']['assessment_score_source'],
+                }))
+              );
+          } catch (scoreErr) {
+            console.error('[commit] Failed to insert assessment scores (non-fatal):', scoreErr);
+          }
+        }
+
         return clinicalNote;
       }
 

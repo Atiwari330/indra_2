@@ -36,7 +36,7 @@ export async function searchPatients(client: Client, orgId: string, query: strin
 }
 
 export async function getPatientContext(client: Client, orgId: string, patientId: string) {
-  const [patient, diagnoses, medications, recentNotes, treatmentPlan, upcomingAppointments, insurance, encounterHistory] =
+  const [patient, diagnoses, medications, recentNotes, treatmentPlan, upcomingAppointments, insurance, encounterHistory, assessmentScores] =
     await Promise.all([
       client
         .from('patients')
@@ -95,11 +95,18 @@ export async function getPatientContext(client: Client, orgId: string, patientId
         .eq('status', 'completed')
         .order('encounter_date', { ascending: false })
         .limit(10),
+      client
+        .from('assessment_scores')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('patient_id', patientId)
+        .order('administered_at', { ascending: false })
+        .limit(20),
     ]);
 
   if (patient.error) throw new Error(`Failed to get patient: ${patient.error.message}`);
 
-  console.log(`[context] Loaded context for ${patient.data.first_name} ${patient.data.last_name}: ${(diagnoses.data ?? []).length} diagnoses, ${(recentNotes.data ?? []).length} notes, ${(insurance.data ?? []).length} insurance, ${(encounterHistory.data ?? []).length} encounters`);
+  console.log(`[context] Loaded context for ${patient.data.first_name} ${patient.data.last_name}: ${(diagnoses.data ?? []).length} diagnoses, ${(recentNotes.data ?? []).length} notes, ${(insurance.data ?? []).length} insurance, ${(encounterHistory.data ?? []).length} encounters, ${(assessmentScores.data ?? []).length} scores`);
 
   return {
     patient: patient.data,
@@ -110,5 +117,6 @@ export async function getPatientContext(client: Client, orgId: string, patientId
     upcomingAppointments: upcomingAppointments.data ?? [],
     insurance: insurance.data ?? [],
     encounterHistory: encounterHistory.data ?? [],
+    assessmentScores: assessmentScores.data ?? [],
   };
 }
