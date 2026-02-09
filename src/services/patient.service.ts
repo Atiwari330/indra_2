@@ -36,7 +36,7 @@ export async function searchPatients(client: Client, orgId: string, query: strin
 }
 
 export async function getPatientContext(client: Client, orgId: string, patientId: string) {
-  const [patient, diagnoses, medications, recentNotes, treatmentPlan, upcomingAppointments] =
+  const [patient, diagnoses, medications, recentNotes, treatmentPlan, upcomingAppointments, insurance, encounterHistory] =
     await Promise.all([
       client
         .from('patients')
@@ -59,7 +59,7 @@ export async function getPatientContext(client: Client, orgId: string, patientId
         .eq('status', 'active'),
       client
         .from('clinical_notes')
-        .select('id, encounter_id, note_type, content, signed_at, created_at')
+        .select('id, encounter_id, note_type, content, risk_assessment, signed_at, created_at')
         .eq('org_id', orgId)
         .eq('patient_id', patientId)
         .eq('is_current', true)
@@ -82,9 +82,24 @@ export async function getPatientContext(client: Client, orgId: string, patientId
         .gte('start_time', new Date().toISOString())
         .order('start_time')
         .limit(5),
+      client
+        .from('patient_insurance')
+        .select('*, insurance_payers(name)')
+        .eq('org_id', orgId)
+        .eq('patient_id', patientId),
+      client
+        .from('encounters')
+        .select('id, encounter_date, encounter_type, status, duration_minutes')
+        .eq('org_id', orgId)
+        .eq('patient_id', patientId)
+        .eq('status', 'completed')
+        .order('encounter_date', { ascending: false })
+        .limit(10),
     ]);
 
   if (patient.error) throw new Error(`Failed to get patient: ${patient.error.message}`);
+
+  console.log(`[context] Loaded context for ${patient.data.first_name} ${patient.data.last_name}: ${(diagnoses.data ?? []).length} diagnoses, ${(recentNotes.data ?? []).length} notes, ${(insurance.data ?? []).length} insurance, ${(encounterHistory.data ?? []).length} encounters`);
 
   return {
     patient: patient.data,
@@ -93,5 +108,7 @@ export async function getPatientContext(client: Client, orgId: string, patientId
     recentNotes: recentNotes.data ?? [],
     treatmentPlan: treatmentPlan.data,
     upcomingAppointments: upcomingAppointments.data ?? [],
+    insurance: insurance.data ?? [],
+    encounterHistory: encounterHistory.data ?? [],
   };
 }
