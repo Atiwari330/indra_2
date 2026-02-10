@@ -4,6 +4,7 @@ import * as noteService from './note.service';
 import * as encounterService from './encounter.service';
 import * as appointmentService from './appointment.service';
 import * as billingService from './billing.service';
+import * as urService from './ur.service';
 
 type Client = SupabaseClient<Database>;
 
@@ -322,6 +323,16 @@ async function executeAction(
           charge_amount: number;
           service_date: string;
         }>,
+      });
+    }
+
+    case 'generate_utilization_review': {
+      validateRequiredFields(payload, 'generate_utilization_review', ['patient_id', 'content']);
+      return urService.createUtilizationReview(client, orgId, providerId, {
+        patient_id: payload.patient_id as string,
+        ai_run_id: payload.ai_run_id as string | undefined,
+        review_type: (payload.review_type as 'initial' | 'concurrent' | 'retrospective') ?? 'concurrent',
+        content: payload.content as Record<string, unknown>,
       });
     }
 

@@ -22,7 +22,7 @@ export function createSubmitResultsTool() {
       proposed_actions: z.array(z.object({
         action_type: z.enum([
           'create_note_draft', 'create_encounter', 'suggest_billing',
-          'update_medication', 'create_appointment',
+          'update_medication', 'create_appointment', 'generate_utilization_review',
         ]),
         description: z.string().describe('Description of this action'),
         target_table: z.string().describe('Database table this action targets'),

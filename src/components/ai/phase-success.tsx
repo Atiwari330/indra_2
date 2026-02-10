@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Check, FileText } from 'lucide-react';
+import { Check, FileText, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
@@ -16,9 +16,15 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
   const { dismiss } = useAgentContext();
   const router = useRouter();
 
-  const handleViewNote = () => {
-    // Signal patient-detail to auto-open the newest note after refresh
-    window.dispatchEvent(new CustomEvent('indra:view-note'));
+  const hasUR = run.proposedActions.some(a => a.actionType === 'utilization_review');
+  const hasNote = run.proposedActions.some(a => a.actionType === 'note');
+
+  const handleViewDocument = () => {
+    if (hasUR) {
+      window.dispatchEvent(new CustomEvent('indra:view-ur'));
+    } else {
+      window.dispatchEvent(new CustomEvent('indra:view-note'));
+    }
     dismiss();
     router.refresh();
   };
@@ -27,6 +33,9 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
     dismiss();
     router.refresh();
   };
+
+  const ViewIcon = hasUR ? ClipboardList : FileText;
+  const viewLabel = hasUR ? 'View Utilization Review' : 'View in Chart';
 
   return (
     <div className="flex flex-col items-center justify-center py-12">
@@ -55,14 +64,16 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
       )}
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        <button
-          onClick={handleViewNote}
-          className="flex items-center justify-center gap-2 rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium text-white transition-opacity"
-          style={{ background: 'var(--color-accent)' }}
-        >
-          <FileText size={16} strokeWidth={1.8} />
-          View in Chart
-        </button>
+        {(hasUR || hasNote) && (
+          <button
+            onClick={handleViewDocument}
+            className="flex items-center justify-center gap-2 rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium text-white transition-opacity"
+            style={{ background: 'var(--color-accent)' }}
+          >
+            <ViewIcon size={16} strokeWidth={1.8} />
+            {viewLabel}
+          </button>
+        )}
 
         <button
           onClick={handleDone}

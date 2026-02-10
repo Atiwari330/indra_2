@@ -27,7 +27,7 @@ export interface Clarification {
 // A proposed action the AI wants to take
 export interface ProposedAction {
   id: string;
-  actionType: 'encounter' | 'note' | 'medication' | 'appointment' | 'billing';
+  actionType: 'encounter' | 'note' | 'medication' | 'appointment' | 'billing' | 'utilization_review';
   description: string;
   payload: Record<string, unknown>;
   assumptions?: string[];

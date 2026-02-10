@@ -4,6 +4,7 @@ export interface SystemPromptContext {
   preferredNoteFormat: string;
   organizationName: string;
   todayDate: string;
+  intentType?: string;
   patientContext?: string;
   encounterContext?: string;
 }
@@ -38,7 +39,7 @@ ${ctx.todayDate}
 
 ## TOOL ORDERING
 Phase 1 (Lookup): find_patient → get_patient_context → resolve_encounter
-Phase 2 (Action): create_progress_note, create_appointment, suggest_billing_codes, update_medication
+Phase 2 (Action): create_progress_note, create_appointment, suggest_billing_codes, update_medication, generate_utilization_review
 Phase 3 (Complete): submit_results OR ask_clarification
 
 ## DOCUMENTATION STANDARDS — Compliance-Aware Reasoning
@@ -88,6 +89,42 @@ Before generating any note section, mentally verify:
 ### Provider Scope Constraint
 - Only document interventions within the provider's credential scope
 - An LCSW documents therapy interventions; an MD documents medication management
-${ctx.patientContext ? `\n## CURRENT PATIENT CONTEXT\n${ctx.patientContext}` : ''}
+${ctx.intentType === 'generate_utilization_review' ? `
+## UTILIZATION REVIEW GENERATION INSTRUCTIONS
+
+You are generating a payer-ready utilization review (UR) document. This compiles ALL existing clinical data into a structured authorization request.
+
+### Workflow
+1. Call find_patient to identify the patient
+2. Call get_patient_context to load their full clinical history
+3. Call generate_utilization_review with all clinical synthesis sections filled in
+4. Call submit_results to complete the workflow
+
+### Section-by-Section Guidance
+
+**diagnoses**: Extract all active diagnoses from patient context. For each, summarize the current symptom status based on the most recent clinical notes.
+
+**treatment_summary**: Compile from encounters and notes. Count total completed sessions, identify modality and interventions from notes, and write a brief treatment narrative.
+
+**assessment_score_trends**: If standardized scores (PHQ-9, GAD-7, etc.) appear in clinical notes or the Session Continuity section, extract chronological scores and interpret the trend.
+
+**goal_progress**: Map each treatment plan goal to evidence from clinical notes. Assess status: MET (goal achieved), APPROACHING (near target), IN_PROGRESS (active work), or BASELINE (no significant change).
+
+**risk_assessment_summary**: Synthesize from the most recent risk assessment data in clinical notes.
+
+**medical_necessity**: This is the most critical section for authorization approval. You MUST:
+- State specific functional limitations (not just symptoms) — how do symptoms impair work, relationships, daily functioning?
+- Describe concrete consequences of discontinuing treatment (risk of relapse, hospitalization, functional decline)
+- Justify the requested session frequency with clinical rationale tied to the patient's current symptom severity
+- Reference objective data (assessment scores, symptom frequency) wherever possible
+
+**continued_treatment_recommendation**: Request a reasonable number of additional sessions. Base treatment goals on unmet treatment plan objectives and remaining functional limitations.
+
+### Rules
+- ONLY use data present in the patient context. NEVER fabricate clinical information.
+- Patient demographics and authorization/insurance details are auto-populated by the service layer — do NOT include them in the tool call.
+- If data is missing or insufficient, list what you assumed in assumptions_made.
+- Use clinical language appropriate for payer review — specific, objective, evidence-based.
+` : ''}${ctx.patientContext ? `\n## CURRENT PATIENT CONTEXT\n${ctx.patientContext}` : ''}
 ${ctx.encounterContext ? `\n## CURRENT ENCOUNTER\n${ctx.encounterContext}` : ''}`;
 }

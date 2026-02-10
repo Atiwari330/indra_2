@@ -15,6 +15,7 @@ const ACTION_TYPE_MAP: Record<string, ProposedAction['actionType']> = {
   update_medication: 'medication',
   create_appointment: 'appointment',
   suggest_billing: 'billing',
+  generate_utilization_review: 'utilization_review',
 };
 
 const STEP_LABEL_MAP: Record<string, string> = {
@@ -25,6 +26,9 @@ const STEP_LABEL_MAP: Record<string, string> = {
   create_appointment: 'Scheduling appointment',
   suggest_billing_codes: 'Selecting billing codes',
   update_medication: 'Updating medication',
+  generate_utilization_review: 'Generating utilization review',
+  submit_results: 'Finalizing results',
+  ask_clarification: 'Requesting clarification',
 };
 
 // ── Response types from backend ────────────────────────────────

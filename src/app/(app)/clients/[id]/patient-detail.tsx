@@ -9,11 +9,13 @@ import {
   Pill,
   FileText,
   CalendarDays,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AIInputBar } from '@/components/ai/ai-input-bar';
 import { NoteDetail } from '@/components/notes/note-detail';
+import { URDetail } from '@/components/notes/ur-detail';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
 
@@ -57,6 +59,13 @@ interface PatientDetailProps {
     appointment_type: string | null;
     status: string;
   }[];
+  recentURs: {
+    id: string;
+    review_type: string;
+    status: string;
+    sessions_requested: number | null;
+    created_at: string;
+  }[];
 }
 
 export function PatientDetail({
@@ -65,10 +74,13 @@ export function PatientDetail({
   medications,
   recentNotes,
   upcomingAppointments,
+  recentURs,
 }: PatientDetailProps) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedURId, setSelectedURId] = useState<string | null>(null);
   const [notes, setNotes] = useState(recentNotes);
   const pendingViewNoteRef = useRef(false);
+  const pendingViewURRef = useRef(false);
 
   useEffect(() => {
     setNotes(recentNotes);
@@ -83,6 +95,15 @@ export function PatientDetail({
     return () => window.removeEventListener('indra:view-note', handler);
   }, []);
 
+  // Listen for "View UR" event from phase-success
+  useEffect(() => {
+    const handler = () => {
+      pendingViewURRef.current = true;
+    };
+    window.addEventListener('indra:view-ur', handler);
+    return () => window.removeEventListener('indra:view-ur', handler);
+  }, []);
+
   // When recentNotes updates and a view-note is pending, auto-open the newest note
   useEffect(() => {
     if (pendingViewNoteRef.current && recentNotes.length > 0) {
@@ -90,6 +111,14 @@ export function PatientDetail({
       setSelectedNoteId(recentNotes[0].id);
     }
   }, [recentNotes]);
+
+  // When recentURs updates and a view-ur is pending, auto-open the newest UR
+  useEffect(() => {
+    if (pendingViewURRef.current && recentURs.length > 0) {
+      pendingViewURRef.current = false;
+      setSelectedURId(recentURs[0].id);
+    }
+  }, [recentURs]);
 
   const handleNoteSigned = useCallback((noteId: string) => {
     setNotes((prev) =>
@@ -246,6 +275,53 @@ export function PatientDetail({
           </InfoCard>
         </motion.div>
 
+        {/* Utilization Reviews */}
+        <motion.div variants={cardItem}>
+          <InfoCard
+            icon={<ClipboardList size={18} strokeWidth={1.8} />}
+            title="Utilization Reviews"
+            emptyText="No utilization reviews"
+            isEmpty={recentURs.length === 0}
+          >
+            <div className="space-y-2">
+              {recentURs.map((ur) => (
+                <button
+                  key={ur.id}
+                  onClick={() => setSelectedURId(ur.id)}
+                  className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-2 py-1.5 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]"
+                >
+                  <div>
+                    <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
+                      {ur.review_type.replace(/_/g, ' ')} review
+                    </p>
+                    <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                      {formatDate(ur.created_at.split('T')[0])}
+                      {ur.sessions_requested != null && ` · ${ur.sessions_requested} sessions requested`}
+                    </p>
+                  </div>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-caption"
+                    style={{
+                      background: ur.status === 'approved'
+                        ? `color-mix(in srgb, var(--color-success) 12%, transparent)`
+                        : ur.status === 'submitted'
+                        ? `color-mix(in srgb, var(--color-accent) 10%, transparent)`
+                        : 'var(--color-bg-tertiary)',
+                      color: ur.status === 'approved'
+                        ? 'var(--color-success)'
+                        : ur.status === 'submitted'
+                        ? 'var(--color-accent)'
+                        : 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {ur.status.replace(/_/g, ' ')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </InfoCard>
+        </motion.div>
+
         {/* Upcoming Appointments */}
         <motion.div variants={cardItem}>
           <InfoCard
@@ -294,6 +370,12 @@ export function PatientDetail({
         noteId={selectedNoteId}
         onClose={() => setSelectedNoteId(null)}
         onSigned={handleNoteSigned}
+      />
+
+      {/* UR Viewer */}
+      <URDetail
+        urId={selectedURId}
+        onClose={() => setSelectedURId(null)}
       />
     </div>
   );

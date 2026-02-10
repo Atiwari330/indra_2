@@ -15,6 +15,7 @@ export const IntentClassification = z.object({
     'schedule_appointment',
     'query_patient_info',
     'update_medication',
+    'generate_utilization_review',
     'general_query',
   ]),
   patient_name: z.string().optional(),
@@ -34,6 +35,7 @@ export const RunActionType = z.enum([
   'suggest_billing',
   'update_medication',
   'create_appointment',
+  'generate_utilization_review',
 ]);
 
 export const ProposedAction = z.object({

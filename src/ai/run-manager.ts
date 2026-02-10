@@ -106,6 +106,7 @@ export async function executeIntent(
       preferredNoteFormat: provider.preferred_note_format,
       organizationName: org?.name ?? 'Unknown Organization',
       todayDate: new Date().toISOString().split('T')[0],
+      intentType,
     };
 
     // Load patient context if provided
@@ -433,6 +434,7 @@ export async function resumeAfterClarification(
     preferredNoteFormat: provider.preferred_note_format,
     organizationName: org?.name ?? 'Unknown Organization',
     todayDate: new Date().toISOString().split('T')[0],
+    intentType: run.intent_type ?? undefined,
   };
 
   await aiRunService.updateRunStatus(client, runId, 'running');

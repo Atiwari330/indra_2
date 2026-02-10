@@ -27,7 +27,7 @@ export default async function PatientPage({ params }: Props) {
   }
 
   // Fetch related data in parallel
-  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes] = await Promise.all([
+  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes] = await Promise.all([
     supabase
       .from('patient_diagnoses')
       .select('id, icd10_code, description, status, is_primary')
@@ -62,6 +62,14 @@ export default async function PatientPage({ params }: Props) {
       .gte('start_time', new Date().toISOString())
       .order('start_time')
       .limit(3),
+
+    supabase
+      .from('utilization_reviews')
+      .select('id, review_type, status, sessions_requested, created_at')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .order('created_at', { ascending: false })
+      .limit(3),
   ]);
 
   return (
@@ -71,6 +79,7 @@ export default async function PatientPage({ params }: Props) {
       medications={medicationsRes.data ?? []}
       recentNotes={notesRes.data ?? []}
       upcomingAppointments={appointmentsRes.data ?? []}
+      recentURs={ursRes.data ?? []}
     />
   );
 }

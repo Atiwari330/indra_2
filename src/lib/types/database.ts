@@ -1504,6 +1504,118 @@ export type Database = {
           },
         ]
       }
+      utilization_reviews: {
+        Row: {
+          ai_run_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          authorization_period_end: string | null
+          authorization_period_start: string | null
+          created_at: string
+          generated_content: Json
+          id: string
+          org_id: string
+          patient_id: string
+          patient_insurance_id: string | null
+          provider_edits: Json | null
+          provider_id: string
+          review_type: Database["public"]["Enums"]["ur_review_type"]
+          sessions_authorized: number | null
+          sessions_requested: number | null
+          sessions_used: number | null
+          status: Database["public"]["Enums"]["ur_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          authorization_period_end?: string | null
+          authorization_period_start?: string | null
+          created_at?: string
+          generated_content: Json
+          id?: string
+          org_id: string
+          patient_id: string
+          patient_insurance_id?: string | null
+          provider_edits?: Json | null
+          provider_id: string
+          review_type?: Database["public"]["Enums"]["ur_review_type"]
+          sessions_authorized?: number | null
+          sessions_requested?: number | null
+          sessions_used?: number | null
+          status?: Database["public"]["Enums"]["ur_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_run_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          authorization_period_end?: string | null
+          authorization_period_start?: string | null
+          created_at?: string
+          generated_content?: Json
+          id?: string
+          org_id?: string
+          patient_id?: string
+          patient_insurance_id?: string | null
+          provider_edits?: Json | null
+          provider_id?: string
+          review_type?: Database["public"]["Enums"]["ur_review_type"]
+          sessions_authorized?: number | null
+          sessions_requested?: number | null
+          sessions_used?: number | null
+          status?: Database["public"]["Enums"]["ur_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utilization_reviews_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utilization_reviews_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utilization_reviews_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utilization_reviews_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utilization_reviews_patient_insurance_id_fkey"
+            columns: ["patient_insurance_id"]
+            isOneToOne: false
+            referencedRelation: "patient_insurance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utilization_reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1520,6 +1632,7 @@ export type Database = {
         | "suggest_billing"
         | "update_medication"
         | "create_appointment"
+        | "generate_utilization_review"
       ai_run_status:
         | "pending"
         | "running"
@@ -1564,6 +1677,14 @@ export type Database = {
       patient_status: "active" | "inactive" | "discharged"
       signature_type: "author" | "cosigner" | "supervisor"
       treatment_plan_status: "draft" | "active" | "completed" | "discontinued"
+      ur_review_type: "initial" | "concurrent" | "retrospective"
+      ur_status:
+        | "draft"
+        | "pending_review"
+        | "approved"
+        | "submitted"
+        | "denied"
+        | "appealed"
       user_role: "admin" | "provider" | "billing" | "staff"
     }
     CompositeTypes: {
@@ -1699,6 +1820,7 @@ export const Constants = {
         "suggest_billing",
         "update_medication",
         "create_appointment",
+        "generate_utilization_review",
       ],
       ai_run_status: [
         "pending",
@@ -1748,6 +1870,15 @@ export const Constants = {
       patient_status: ["active", "inactive", "discharged"],
       signature_type: ["author", "cosigner", "supervisor"],
       treatment_plan_status: ["draft", "active", "completed", "discontinued"],
+      ur_review_type: ["initial", "concurrent", "retrospective"],
+      ur_status: [
+        "draft",
+        "pending_review",
+        "approved",
+        "submitted",
+        "denied",
+        "appealed",
+      ],
       user_role: ["admin", "provider", "billing", "staff"],
     },
   },
