@@ -249,3 +249,85 @@ a {
   text-transform: uppercase;
   color: var(--color-text-tertiary);
 }
+
+/* ============================================================
+   Serenity Theme — Patient Portal
+   Applied via .portal-theme class on the portal layout wrapper
+   ============================================================ */
+
+.portal-theme {
+  --color-bg-primary: #FAF8F5;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #F0EDE8;
+
+  --color-accent: #5B9A8B;
+  --color-accent-hover: #4A8577;
+
+  --color-warning: #E8A946;
+  --color-error: #D4645C;
+
+  --color-border: rgba(90, 70, 50, 0.06);
+  --color-border-strong: rgba(90, 70, 50, 0.12);
+  --color-separator: rgba(90, 70, 50, 0.04);
+
+  --color-bg-card: #ffffff;
+  --color-nav-active-bg: rgba(91, 154, 139, 0.10);
+
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.60);
+  --glass-bg-topbar: rgba(250, 248, 245, 0.90);
+  --glass-border: rgba(90, 70, 50, 0.06);
+  --glass-border-subtle: rgba(90, 70, 50, 0.04);
+
+  /* Mood colors */
+  --color-mood-great: #5B9A8B;
+  --color-mood-good: #7DB8A8;
+  --color-mood-okay: #E8A946;
+  --color-mood-low: #D4945C;
+  --color-mood-rough: #D4645C;
+}
+
+.portal-theme body,
+.portal-theme.portal-bg {
+  background-image: radial-gradient(at 20% 30%, rgba(91, 154, 139, 0.03) 0%, transparent 50%),
+                     radial-gradient(at 80% 70%, rgba(232, 169, 70, 0.02) 0%, transparent 50%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .portal-theme {
+    --color-bg-primary: #0A0A0A;
+    --color-bg-secondary: #1c1c1e;
+    --color-bg-tertiary: #2A2A2C;
+
+    --color-accent: #7DB8A8;
+    --color-accent-hover: #8DC4B5;
+
+    --color-warning: #F0C060;
+    --color-error: #E07070;
+
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-strong: rgba(255, 255, 255, 0.15);
+    --color-separator: rgba(255, 255, 255, 0.06);
+
+    --color-bg-card: #1c1c1e;
+    --color-nav-active-bg: rgba(125, 184, 168, 0.12);
+
+    --glass-bg: rgba(28, 28, 30, 0.72);
+    --glass-bg-subtle: rgba(28, 28, 30, 0.48);
+    --glass-bg-topbar: rgba(10, 10, 10, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-subtle: rgba(255, 255, 255, 0.04);
+
+    --color-mood-great: #7DB8A8;
+    --color-mood-good: #8DC4B5;
+    --color-mood-okay: #F0C060;
+    --color-mood-low: #E0A060;
+    --color-mood-rough: #E07070;
+  }
+
+  .portal-theme body,
+  .portal-theme.portal-bg {
+    background-image: radial-gradient(at 20% 30%, rgba(125, 184, 168, 0.03) 0%, transparent 50%),
+                       radial-gradient(at 80% 70%, rgba(240, 192, 96, 0.02) 0%, transparent 50%);
+  }
+}

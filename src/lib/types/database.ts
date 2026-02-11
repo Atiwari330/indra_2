@@ -991,6 +991,51 @@ export type Database = {
           },
         ]
       }
+      mood_checkins: {
+        Row: {
+          checked_in_at: string
+          created_at: string
+          id: string
+          mood: Database["public"]["Enums"]["mood_level"]
+          note: string | null
+          org_id: string
+          patient_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          mood: Database["public"]["Enums"]["mood_level"]
+          note?: string | null
+          org_id: string
+          patient_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          mood?: Database["public"]["Enums"]["mood_level"]
+          note?: string | null
+          org_id?: string
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_checkins_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mood_checkins_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_drafts: {
         Row: {
           accepted_at: string | null
@@ -1273,6 +1318,7 @@ export type Database = {
       patients: {
         Row: {
           address: Json | null
+          auth_id: string | null
           created_at: string
           dob: string
           email: string | null
@@ -1288,6 +1334,7 @@ export type Database = {
         }
         Insert: {
           address?: Json | null
+          auth_id?: string | null
           created_at?: string
           dob: string
           email?: string | null
@@ -1303,6 +1350,7 @@ export type Database = {
         }
         Update: {
           address?: Json | null
+          auth_id?: string | null
           created_at?: string
           dob?: string
           email?: string | null
@@ -1322,6 +1370,106 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_message_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          org_id: string
+          patient_id: string
+          provider_id: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_id: string
+          patient_id: string
+          provider_id: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          org_id?: string
+          patient_id?: string
+          provider_id?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_message_threads_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_message_threads_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_message_threads_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          org_id: string
+          read_at: string | null
+          sender_id: string
+          sender_type: Database["public"]["Enums"]["portal_sender_type"]
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          org_id: string
+          read_at?: string | null
+          sender_id: string
+          sender_type: Database["public"]["Enums"]["portal_sender_type"]
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+          read_at?: string | null
+          sender_id?: string
+          sender_type?: Database["public"]["Enums"]["portal_sender_type"]
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "portal_message_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -1376,6 +1524,58 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_prep_notes: {
+        Row: {
+          appointment_id: string
+          content: Json
+          created_at: string
+          id: string
+          org_id: string
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          content?: Json
+          created_at?: string
+          id?: string
+          org_id: string
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          org_id?: string
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_prep_notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_prep_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_prep_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -1632,6 +1832,7 @@ export type Database = {
     }
     Functions: {
       get_org_id: { Args: never; Returns: string }
+      get_portal_patient_id: { Args: never; Returns: string }
       get_user_id: { Args: never; Returns: string }
     }
     Enums: {
@@ -1681,11 +1882,13 @@ export type Database = {
         | "medication_management"
       insurance_priority: "primary" | "secondary" | "tertiary"
       medication_status: "active" | "discontinued" | "changed"
+      mood_level: "great" | "good" | "okay" | "low" | "rough"
       note_draft_status: "pending_review" | "accepted" | "rejected"
       note_format: "SOAP" | "DAP" | "BIRP"
       note_status: "draft" | "signed" | "amended" | "addended"
       note_type: "SOAP" | "DAP" | "BIRP" | "intake" | "discharge"
       patient_status: "active" | "inactive" | "discharged"
+      portal_sender_type: "patient" | "provider"
       signature_type: "author" | "cosigner" | "supervisor"
       treatment_plan_status: "draft" | "active" | "completed" | "discontinued"
       ur_review_type: "initial" | "concurrent" | "retrospective"
@@ -1875,11 +2078,13 @@ export const Constants = {
       ],
       insurance_priority: ["primary", "secondary", "tertiary"],
       medication_status: ["active", "discontinued", "changed"],
+      mood_level: ["great", "good", "okay", "low", "rough"],
       note_draft_status: ["pending_review", "accepted", "rejected"],
       note_format: ["SOAP", "DAP", "BIRP"],
       note_status: ["draft", "signed", "amended", "addended"],
       note_type: ["SOAP", "DAP", "BIRP", "intake", "discharge"],
       patient_status: ["active", "inactive", "discharged"],
+      portal_sender_type: ["patient", "provider"],
       signature_type: ["author", "cosigner", "supervisor"],
       treatment_plan_status: ["draft", "active", "completed", "discontinued"],
       ur_review_type: ["initial", "concurrent", "retrospective"],
