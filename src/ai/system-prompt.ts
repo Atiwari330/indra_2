@@ -7,6 +7,7 @@ export interface SystemPromptContext {
   intentType?: string;
   patientContext?: string;
   encounterContext?: string;
+  sessionTranscript?: string;
 }
 
 export function buildSystemPrompt(ctx: SystemPromptContext): string {
@@ -163,6 +164,23 @@ You are generating a treatment plan for a patient. The plan must tie SMART goals
 - If clinical data is limited, document what you assumed in assumptions_made.
 - Use clinical language appropriate for treatment planning.
 - Ensure the "golden thread" — goals connect to diagnoses, objectives operationalize goals, interventions support objectives.
+` : ''}${ctx.sessionTranscript ? `
+## TRANSCRIPT-BASED NOTE GENERATION
+
+You have a session transcript from a telehealth visit. Generate a SOAP progress note based SOLELY on what was said in the transcript.
+
+### Rules for Transcript-Based Notes
+1. Extract clinical content from what was actually said — do NOT fabricate observations
+2. Speaker labels: [clinician] = the treating provider, [patient] = the patient
+3. Subjective: Use patient's own words and reported symptoms from the transcript
+4. Objective: Document clinician's observations mentioned in the transcript (affect, engagement, insight)
+5. Assessment: Tie transcript content to active diagnoses from the patient context
+6. Plan: Extract any plans, homework, or follow-up discussed in the transcript
+7. Always include the transcript as source_transcript in the create_progress_note payload
+8. Risk assessment: If SI/HI/SH was discussed, document it. If not discussed, note "Not assessed this session"
+
+## SESSION TRANSCRIPT
+${ctx.sessionTranscript}
 ` : ''}${ctx.patientContext ? `\n## CURRENT PATIENT CONTEXT\n${ctx.patientContext}` : ''}
 ${ctx.encounterContext ? `\n## CURRENT ENCOUNTER\n${ctx.encounterContext}` : ''}`;
 }

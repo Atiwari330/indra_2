@@ -1,0 +1,38 @@
+<!--
+  Open this file in a browser, right-click each canvas, and "Save Image As"
+  to generate icon-16.png, icon-48.png, icon-128.png.
+
+  Or use any icon generation tool. The extension needs these three sizes.
+-->
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Indra Scribe Icons - Right-click to save each</h3>
+<p>icon-16.png:</p>
+<canvas id="c16" width="16" height="16"></canvas>
+<p>icon-48.png:</p>
+<canvas id="c48" width="48" height="48"></canvas>
+<p>icon-128.png:</p>
+<canvas id="c128" width="128" height="128"></canvas>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = canvas.width;
+  // Background
+  ctx.fillStyle = '#6366f1';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.2);
+  ctx.fill();
+  // Letter "S" for Scribe
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${s * 0.6}px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', s / 2, s / 2 + s * 0.03);
+}
+drawIcon(document.getElementById('c16'));
+drawIcon(document.getElementById('c48'));
+drawIcon(document.getElementById('c128'));
+</script>
+</body>
+</html>

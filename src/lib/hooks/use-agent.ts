@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useCallback, useRef } from 'react';
-import type { AgentRun, AgentStatus } from '@/lib/types/ai-agent';
+import type { AgentRun, AgentStatus, SubmitIntentOptions } from '@/lib/types/ai-agent';
 import { getAIAgentService } from '@/services/ai-agent.service';
 
 // ── State ───────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ export function useAgent() {
   }, []);
 
   const submitIntent = useCallback(
-    async (input: string, patientId?: string) => {
+    async (input: string, patientId?: string, options?: SubmitIntentOptions) => {
       dispatch({ type: 'CLOSE_COMMAND_BAR' });
       dispatch({ type: 'OPEN_SLIDE_OVER' });
 
@@ -148,7 +148,7 @@ export function useAgent() {
       dispatch({ type: 'SET_RUN', run: makeSyntheticRun(input, SUBMIT_STEPS) });
 
       try {
-        const run = await serviceRef.current.submitIntent(input, patientId);
+        const run = await serviceRef.current.submitIntent(input, patientId, options);
         dispatch({ type: 'SET_RUN', run });
 
         // Only poll if the returned status is non-terminal (mock returns pending)

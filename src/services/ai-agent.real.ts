@@ -5,6 +5,7 @@ import type {
   ProcessingStep,
   ProposedAction,
   Clarification,
+  SubmitIntentOptions,
 } from '@/lib/types/ai-agent';
 
 // ── Mapping helpers ────────────────────────────────────────────
@@ -227,9 +228,10 @@ async function apiFetch<T>(
 
 export function createRealAIService(): AIAgentService {
   return {
-    async submitIntent(input: string, patientId?: string): Promise<AgentRun> {
+    async submitIntent(input: string, patientId?: string, options?: SubmitIntentOptions): Promise<AgentRun> {
       const body: Record<string, unknown> = { text: input };
       if (patientId) body.patient_id = patientId;
+      if (options?.transcriptionSessionId) body.transcription_session_id = options.transcriptionSessionId;
 
       const resp = await apiFetch<IntentResponse>('/api/ai/intent', {
         method: 'POST',

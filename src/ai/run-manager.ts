@@ -3,7 +3,7 @@ import type { Database } from '@/lib/types/database';
 import type { ModelMessage } from 'ai';
 import { runOrchestrator, type OrchestratorCallbacks } from './orchestrator';
 import { classifyIntent } from './intent-classifier';
-import { loadPatientContextForPrompt, loadEncounterContextForPrompt } from './context-loader';
+import { loadPatientContextForPrompt, loadEncounterContextForPrompt, loadTranscriptForPrompt } from './context-loader';
 import * as aiRunService from '@/services/ai-run.service';
 import type { SystemPromptContext } from './system-prompt';
 
@@ -14,6 +14,7 @@ export interface ExecuteIntentOptions {
   inputText: string;
   patientId?: string;
   encounterId?: string;
+  transcriptionSessionId?: string;
   idempotencyKey?: string;
   callbacks?: OrchestratorCallbacks;
 }
@@ -119,6 +120,14 @@ export async function executeIntent(
       systemPromptContext.encounterContext = await loadEncounterContextForPrompt(
         client, orgId, options.encounterId
       );
+    }
+    // Load transcript if a transcription session is referenced
+    if (options.transcriptionSessionId) {
+      const transcript = await loadTranscriptForPrompt(client, options.transcriptionSessionId);
+      if (transcript) {
+        systemPromptContext.sessionTranscript = transcript;
+        console.log(`[run-manager] Loaded session transcript: ${transcript.length} chars`);
+      }
     }
 
     // 5. Build initial messages

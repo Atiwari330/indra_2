@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return errorResponse(`Validation error: ${parsed.error.message}`, 400);
     }
 
-    const { text, patient_id, encounter_id, idempotency_key } = parsed.data;
+    const { text, patient_id, encounter_id, transcription_session_id, idempotency_key } = parsed.data;
     const client = getAdminClient();
 
     const result = await executeIntent(client, {
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       inputText: text,
       patientId: patient_id,
       encounterId: encounter_id,
+      transcriptionSessionId: transcription_session_id,
       idempotencyKey: idempotency_key,
     });
 

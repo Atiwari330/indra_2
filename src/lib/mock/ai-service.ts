@@ -57,7 +57,7 @@ function computeStepProgress(
 
 export function createMockAIService(): AIAgentService {
   return {
-    async submitIntent(input: string, patientId?: string): Promise<AgentRun> {
+    async submitIntent(input: string, patientId?: string, _options?: unknown): Promise<AgentRun> {
       const scenario = matchScenario(input);
       const runId = generateRunId();
 

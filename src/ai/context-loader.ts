@@ -339,6 +339,39 @@ export async function loadPatientContextForPrompt(
   return result;
 }
 
+export async function loadTranscriptForPrompt(
+  client: Client,
+  sessionId: string
+): Promise<string | null> {
+  const { data, error } = await client
+    .from('transcription_sessions')
+    .select('full_transcript, transcript_segments, status')
+    .eq('id', sessionId)
+    .single();
+
+  if (error || !data) {
+    console.error(`[context] Failed to load transcript session ${sessionId}:`, error?.message);
+    return null;
+  }
+
+  // Prefer full_transcript if available (finalized)
+  if (data.full_transcript) {
+    console.log(`[context] Loaded finalized transcript: ${data.full_transcript.length} chars`);
+    return data.full_transcript;
+  }
+
+  // Otherwise build from segments
+  interface Segment { speaker: string; text: string; is_final: boolean }
+  const segments = (data.transcript_segments ?? []) as unknown as Segment[];
+  const transcript = segments
+    .filter((s) => s.is_final)
+    .map((s) => `[${s.speaker}] ${s.text}`)
+    .join('\n');
+
+  console.log(`[context] Built transcript from ${segments.length} segments: ${transcript.length} chars`);
+  return transcript || null;
+}
+
 export async function loadEncounterContextForPrompt(
   client: Client,
   orgId: string,

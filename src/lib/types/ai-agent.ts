@@ -47,9 +47,14 @@ export interface AgentRun {
   tokenUsage?: { input: number; output: number };
 }
 
+// Options for submitting an intent
+export interface SubmitIntentOptions {
+  transcriptionSessionId?: string;
+}
+
 // Service interface — both mock and real implement this
 export interface AIAgentService {
-  submitIntent(input: string, patientId?: string): Promise<AgentRun>;
+  submitIntent(input: string, patientId?: string, options?: SubmitIntentOptions): Promise<AgentRun>;
   getRunStatus(runId: string): Promise<AgentRun>;
   respondToClarification(runId: string, answers: Record<string, string>): Promise<AgentRun>;
   commitActions(runId: string): Promise<AgentRun>;
