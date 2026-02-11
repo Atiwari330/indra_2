@@ -101,37 +101,46 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between px-6 py-4"
+              className="px-6 py-4"
               style={{ borderBottom: '1px solid var(--color-separator)' }}
             >
-              <div className="flex items-center gap-3">
-                <h2 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
-                  {note?.note_type ?? 'SOAP'} Note
-                </h2>
-                {note && (
-                  <span
-                    className="rounded-full px-2 py-0.5 text-caption font-medium"
-                    style={{
-                      background: note.status === 'signed'
-                        ? `color-mix(in srgb, var(--color-success) 12%, transparent)`
-                        : `color-mix(in srgb, var(--color-warning) 12%, transparent)`,
-                      color: note.status === 'signed'
-                        ? 'var(--color-success)'
-                        : 'var(--color-warning)',
-                    }}
-                  >
-                    {note.status}
-                  </span>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
+                    {note?.note_type ?? 'SOAP'} Note
+                  </h2>
+                  {note && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-caption font-medium"
+                      style={{
+                        background: note.status === 'signed'
+                          ? `color-mix(in srgb, var(--color-success) 12%, transparent)`
+                          : `color-mix(in srgb, var(--color-warning) 12%, transparent)`,
+                        color: note.status === 'signed'
+                          ? 'var(--color-success)'
+                          : 'var(--color-warning)',
+                      }}
+                    >
+                      {note.status}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="rounded-full p-1.5 transition-colors"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  aria-label="Close panel"
+                >
+                  <X size={18} strokeWidth={1.8} />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="rounded-full p-1.5 transition-colors"
-                style={{ color: 'var(--color-text-secondary)' }}
-                aria-label="Close panel"
-              >
-                <X size={18} strokeWidth={1.8} />
-              </button>
+              {note && (
+                <p className="mt-1 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                  {new Date(note.created_at).toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </p>
+              )}
             </div>
 
             {/* Body */}
@@ -153,23 +162,7 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
               )}
 
               {note && !loading && (
-                <>
-                  {/* Date */}
-                  <p
-                    className="mb-6 text-caption"
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                  >
-                    {new Date(note.created_at).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
-
-                  {/* SOAP content */}
-                  <SOAPNoteContent content={note.content} />
-                </>
+                <SOAPNoteContent content={note.content} />
               )}
             </div>
 
@@ -197,22 +190,15 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
                     {signing ? 'Signing...' : 'Sign Note'}
                   </button>
                 ) : (
-                  <div className="flex items-center justify-center gap-2 py-2">
-                    <div
-                      className="flex h-6 w-6 items-center justify-center rounded-full"
-                      style={{ background: 'var(--color-success)' }}
-                    >
-                      <Check size={14} strokeWidth={3} className="text-white" />
-                    </div>
-                    <span className="text-callout" style={{ color: 'var(--color-text-secondary)' }}>
+                  <div className="flex items-center justify-center gap-1.5 py-2">
+                    <Check size={14} style={{ color: 'var(--color-success)' }} />
+                    <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
                       Signed
                       {note.signed_at && (
                         <> &middot; {new Date(note.signed_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
                         })}</>
                       )}
                     </span>

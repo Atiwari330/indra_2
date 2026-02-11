@@ -27,7 +27,7 @@ export default async function PatientPage({ params }: Props) {
   }
 
   // Fetch related data in parallel
-  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes] = await Promise.all([
+  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes] = await Promise.all([
     supabase
       .from('patient_diagnoses')
       .select('id, icd10_code, description, status, is_primary')
@@ -70,6 +70,14 @@ export default async function PatientPage({ params }: Props) {
       .eq('org_id', DEV_ORG_ID)
       .order('created_at', { ascending: false })
       .limit(3),
+
+    supabase
+      .from('treatment_plans')
+      .select('id, version, status, diagnosis_codes, goals, review_date, signed_at, created_at')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .eq('is_current', true)
+      .maybeSingle(),
   ]);
 
   return (
@@ -80,6 +88,16 @@ export default async function PatientPage({ params }: Props) {
       recentNotes={notesRes.data ?? []}
       upcomingAppointments={appointmentsRes.data ?? []}
       recentURs={ursRes.data ?? []}
+      treatmentPlan={treatmentPlanRes.data ? {
+        id: treatmentPlanRes.data.id,
+        version: treatmentPlanRes.data.version,
+        status: treatmentPlanRes.data.status,
+        diagnosis_codes: (treatmentPlanRes.data.diagnosis_codes ?? []) as string[],
+        goals: (treatmentPlanRes.data.goals ?? []) as Array<{ goal: string; target_date?: string }>,
+        review_date: treatmentPlanRes.data.review_date ?? '',
+        signed_at: treatmentPlanRes.data.signed_at,
+        created_at: treatmentPlanRes.data.created_at,
+      } : null}
     />
   );
 }

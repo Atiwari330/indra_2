@@ -39,7 +39,7 @@ ${ctx.todayDate}
 
 ## TOOL ORDERING
 Phase 1 (Lookup): find_patient → get_patient_context → resolve_encounter
-Phase 2 (Action): create_progress_note, create_appointment, suggest_billing_codes, update_medication, generate_utilization_review
+Phase 2 (Action): create_progress_note, create_appointment, suggest_billing_codes, update_medication, generate_utilization_review, create_treatment_plan
 Phase 3 (Complete): submit_results OR ask_clarification
 
 ## DOCUMENTATION STANDARDS — Compliance-Aware Reasoning
@@ -125,6 +125,44 @@ You are generating a payer-ready utilization review (UR) document. This compiles
 - Patient demographics and authorization/insurance details are auto-populated by the service layer — do NOT include them in the tool call.
 - If data is missing or insufficient, list what you assumed in assumptions_made.
 - Use clinical language appropriate for payer review — specific, objective, evidence-based.
+` : ''}${ctx.intentType === 'create_treatment_plan' ? `
+## TREATMENT PLAN GENERATION INSTRUCTIONS
+
+You are generating a treatment plan for a patient. The plan must tie SMART goals to active diagnoses and include measurable objectives and evidence-based interventions.
+
+### Workflow
+1. Call find_patient to identify the patient
+2. Call get_patient_context to load their full clinical history
+3. Call create_treatment_plan with all sections filled in
+4. Call submit_results to complete the workflow
+
+### Section-by-Section Guidance
+
+**diagnosis_codes**: Use ONLY the active ICD-10 codes from the patient context. Never fabricate diagnoses.
+
+**goals**: Create SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound) tied to each active diagnosis. Each goal should:
+- Reference the specific symptom or functional limitation being targeted
+- Include a target date (typically 90 days for initial plans)
+- Be achievable within the review period
+- If assessment scores are available (PHQ-9, GAD-7), reference target score reductions
+
+**objectives**: Operationalize each goal into measurable objectives. Each objective should:
+- Specify what the patient will do
+- Include frequency of measurement or practice (e.g., "3x per week", "daily")
+- Be observable and measurable by the provider
+
+**interventions**: Select evidence-based interventions appropriate for the diagnoses. Each intervention should:
+- Match the patient's diagnoses (e.g., CBT for depression/anxiety, DBT for emotion dysregulation)
+- Stay within the provider's credential scope (LCSW = therapy; MD = medication management)
+- Include delivery frequency (e.g., "weekly individual sessions", "as needed")
+
+**review_date**: Set to 90 days from today for initial plans.
+
+### Rules
+- ONLY use diagnoses present in the patient context. NEVER fabricate clinical information.
+- If clinical data is limited, document what you assumed in assumptions_made.
+- Use clinical language appropriate for treatment planning.
+- Ensure the "golden thread" — goals connect to diagnoses, objectives operationalize goals, interventions support objectives.
 ` : ''}${ctx.patientContext ? `\n## CURRENT PATIENT CONTEXT\n${ctx.patientContext}` : ''}
 ${ctx.encounterContext ? `\n## CURRENT ENCOUNTER\n${ctx.encounterContext}` : ''}`;
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Pill, CalendarPlus, Receipt, Stethoscope, ClipboardList, ChevronDown, AlertTriangle } from 'lucide-react';
+import { FileText, Pill, CalendarPlus, Receipt, Stethoscope, ClipboardList, Target, ChevronDown, AlertTriangle } from 'lucide-react';
 import type { ProposedAction } from '@/lib/types/ai-agent';
 import { smooth } from '@/lib/animations';
 import { SOAPNoteContent } from '@/components/notes/soap-note-content';
@@ -14,6 +14,7 @@ const ACTION_ICONS: Record<string, typeof FileText> = {
   appointment: CalendarPlus,
   billing: Receipt,
   utilization_review: ClipboardList,
+  treatment_plan: Target,
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -23,6 +24,7 @@ const ACTION_LABELS: Record<string, string> = {
   appointment: 'Appointment',
   billing: 'Billing',
   utilization_review: 'Utilization Review',
+  treatment_plan: 'Treatment Plan',
 };
 
 interface ActionCardProps {
@@ -195,6 +197,84 @@ function URContent({ content }: { content: Record<string, unknown> }) {
   );
 }
 
+function TreatmentPlanContent({ payload }: { payload: Record<string, unknown> }) {
+  const diagnosisCodes = payload.diagnosis_codes as string[] | undefined;
+  const goals = payload.goals as Array<{ goal: string; target_date?: string }> | undefined;
+  const objectives = payload.objectives as Array<{ objective: string; frequency?: string }> | undefined;
+  const interventions = payload.interventions as Array<{ intervention: string; frequency?: string }> | undefined;
+  const reviewDate = payload.review_date as string | undefined;
+
+  return (
+    <div className="space-y-3">
+      {diagnosisCodes && diagnosisCodes.length > 0 && (
+        <div>
+          <p className="text-caption font-medium" style={{ color: 'var(--color-text-tertiary)' }}>DIAGNOSES</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {diagnosisCodes.map((code, i) => (
+              <span key={i} className="rounded-[var(--radius-sm)] px-1.5 py-0.5 text-caption font-semibold"
+                style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}>
+                {code}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {goals && goals.length > 0 && (
+        <div>
+          <p className="text-caption font-medium" style={{ color: 'var(--color-text-tertiary)' }}>GOALS</p>
+          <div className="mt-1 space-y-1.5">
+            {goals.map((g, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="mt-1.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: 'var(--color-accent)' }} />
+                <div>
+                  <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>{g.goal}</p>
+                  {g.target_date && <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>Target: {g.target_date}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {objectives && objectives.length > 0 && (
+        <div>
+          <p className="text-caption font-medium" style={{ color: 'var(--color-text-tertiary)' }}>OBJECTIVES</p>
+          <div className="mt-1 space-y-1">
+            {objectives.map((o, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-callout" style={{ color: 'var(--color-text-primary)' }}>{o.objective}</span>
+                {o.frequency && (
+                  <span className="rounded-full px-1.5 py-0.5 text-caption" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}>
+                    {o.frequency}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {interventions && interventions.length > 0 && (
+        <div>
+          <p className="text-caption font-medium" style={{ color: 'var(--color-text-tertiary)' }}>INTERVENTIONS</p>
+          <div className="mt-1 space-y-1">
+            {interventions.map((iv, i) => (
+              <div key={i}>
+                <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>{iv.intervention}</p>
+                {iv.frequency && <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>{iv.frequency}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {reviewDate && (
+        <div className="flex items-baseline gap-2">
+          <span className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>Review Date</span>
+          <span className="text-callout" style={{ color: 'var(--color-text-primary)' }}>{reviewDate}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ActionCard({ action }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const Icon = ACTION_ICONS[action.actionType] || FileText;
@@ -262,7 +342,14 @@ export function ActionCard({ action }: ActionCardProps) {
                 transition={smooth}
                 className="overflow-hidden"
               >
-                {action.actionType === 'utilization_review' && action.payload?.content ? (
+                {action.actionType === 'treatment_plan' && action.payload ? (
+                  <div
+                    className="mt-2 rounded-[var(--radius-sm)] p-3"
+                    style={{ background: 'var(--color-bg-tertiary)' }}
+                  >
+                    <TreatmentPlanContent payload={action.payload as Record<string, unknown>} />
+                  </div>
+                ) : action.actionType === 'utilization_review' && action.payload?.content ? (
                   <div
                     className="mt-2 rounded-[var(--radius-sm)] p-3"
                     style={{ background: 'var(--color-bg-tertiary)' }}

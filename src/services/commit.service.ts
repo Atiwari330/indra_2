@@ -5,6 +5,7 @@ import * as encounterService from './encounter.service';
 import * as appointmentService from './appointment.service';
 import * as billingService from './billing.service';
 import * as urService from './ur.service';
+import * as treatmentPlanService from './treatment-plan.service';
 
 type Client = SupabaseClient<Database>;
 
@@ -46,12 +47,14 @@ export async function commitActionGroup(
 
   for (const action of actions) {
     const payload = (action.provider_modified_payload ?? action.payload) as Record<string, unknown>;
+    console.log(`[commit.service] Executing action ${action.id} | type: ${action.action_type} | table: ${action.target_table} | payload keys: ${Object.keys(payload).join(', ')}`);
 
     // Resolve cross-references
     const resolvedPayload = resolveCrossRefs(payload, refs);
 
     try {
       const result = await executeAction(client, orgId, providerId, action.action_type, resolvedPayload);
+      console.log(`[commit.service] Action ${action.action_type} SUCCESS | result id: ${result && typeof result === 'object' && 'id' in result ? (result as { id: string }).id : 'none'}`);
 
       // Store the created ID for cross-references
       if (result && typeof result === 'object' && 'id' in result) {
@@ -61,7 +64,7 @@ export async function commitActionGroup(
       }
 
       // Mark action as committed
-      await client
+      const { error: updateError } = await client
         .from('ai_proposed_actions')
         .update({
           status: 'committed',
@@ -70,6 +73,10 @@ export async function commitActionGroup(
         })
         .eq('id', action.id);
 
+      if (updateError) {
+        console.error(`[commit.service] Failed to mark action ${action.id} as committed:`, updateError.message);
+      }
+
       results.push({
         actionId: action.id,
         actionType: action.action_type,
@@ -77,6 +84,7 @@ export async function commitActionGroup(
         result,
       });
     } catch (err) {
+      console.error(`[commit.service] Action ${action.action_type} FAILED:`, err instanceof Error ? err.message : err);
       results.push({
         actionId: action.id,
         actionType: action.action_type,
@@ -89,15 +97,24 @@ export async function commitActionGroup(
   }
 
   // Update the run status if all actions in the group's run were committed
-  if (results.length > 0 && results.every((r) => r.success)) {
+  const allSuccess = results.length > 0 && results.every((r) => r.success);
+  console.log(`[commit.service] All actions done | count: ${results.length} | allSuccess: ${allSuccess}`);
+
+  if (allSuccess) {
     const runId = actions[0].run_id;
-    await client
+    const { error: runUpdateError } = await client
       .from('ai_runs')
       .update({
         status: 'committed',
         completed_at: new Date().toISOString(),
       })
       .eq('id', runId);
+
+    if (runUpdateError) {
+      console.error(`[commit.service] Failed to update run ${runId} to committed:`, runUpdateError.message);
+    } else {
+      console.log(`[commit.service] Run ${runId} → committed`);
+    }
   }
 
   return {
@@ -333,6 +350,21 @@ async function executeAction(
         ai_run_id: payload.ai_run_id as string | undefined,
         review_type: (payload.review_type as 'initial' | 'concurrent' | 'retrospective') ?? 'concurrent',
         content: payload.content as Record<string, unknown>,
+      });
+    }
+
+    case 'create_treatment_plan': {
+      validateRequiredFields(payload, 'create_treatment_plan', [
+        'patient_id', 'diagnosis_codes', 'goals', 'objectives', 'interventions', 'review_date',
+      ]);
+      return treatmentPlanService.createTreatmentPlan(client, orgId, providerId, {
+        patient_id: payload.patient_id as string,
+        ai_run_id: payload.ai_run_id as string | undefined,
+        diagnosis_codes: payload.diagnosis_codes as string[],
+        goals: payload.goals as Array<{ goal: string; target_date?: string }>,
+        objectives: payload.objectives as Array<{ objective: string; frequency?: string }>,
+        interventions: payload.interventions as Array<{ intervention: string; frequency?: string }>,
+        review_date: payload.review_date as string,
       });
     }
 

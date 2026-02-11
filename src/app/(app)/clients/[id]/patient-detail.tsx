@@ -10,12 +10,14 @@ import {
   FileText,
   CalendarDays,
   ClipboardList,
+  Target,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AIInputBar } from '@/components/ai/ai-input-bar';
 import { NoteDetail } from '@/components/notes/note-detail';
 import { URDetail } from '@/components/notes/ur-detail';
+import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
 
@@ -66,6 +68,16 @@ interface PatientDetailProps {
     sessions_requested: number | null;
     created_at: string;
   }[];
+  treatmentPlan: {
+    id: string;
+    version: number;
+    status: string;
+    diagnosis_codes: string[];
+    goals: Array<{ goal: string; target_date?: string }>;
+    review_date: string;
+    signed_at: string | null;
+    created_at: string;
+  } | null;
 }
 
 export function PatientDetail({
@@ -75,12 +87,15 @@ export function PatientDetail({
   recentNotes,
   upcomingAppointments,
   recentURs,
+  treatmentPlan,
 }: PatientDetailProps) {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedURId, setSelectedURId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [notes, setNotes] = useState(recentNotes);
   const pendingViewNoteRef = useRef(false);
   const pendingViewURRef = useRef(false);
+  const pendingViewPlanRef = useRef(false);
 
   useEffect(() => {
     setNotes(recentNotes);
@@ -104,6 +119,15 @@ export function PatientDetail({
     return () => window.removeEventListener('indra:view-ur', handler);
   }, []);
 
+  // Listen for "View Treatment Plan" event from phase-success
+  useEffect(() => {
+    const handler = () => {
+      pendingViewPlanRef.current = true;
+    };
+    window.addEventListener('indra:view-treatment-plan', handler);
+    return () => window.removeEventListener('indra:view-treatment-plan', handler);
+  }, []);
+
   // When recentNotes updates and a view-note is pending, auto-open the newest note
   useEffect(() => {
     if (pendingViewNoteRef.current && recentNotes.length > 0) {
@@ -119,6 +143,14 @@ export function PatientDetail({
       setSelectedURId(recentURs[0].id);
     }
   }, [recentURs]);
+
+  // When treatmentPlan updates and a view-plan is pending, auto-open it
+  useEffect(() => {
+    if (pendingViewPlanRef.current && treatmentPlan) {
+      pendingViewPlanRef.current = false;
+      setSelectedPlanId(treatmentPlan.id);
+    }
+  }, [treatmentPlan]);
 
   const handleNoteSigned = useCallback((noteId: string) => {
     setNotes((prev) =>
@@ -136,16 +168,16 @@ export function PatientDetail({
       {/* Back link */}
       <Link
         href="/clients"
-        className="mb-6 inline-flex items-center gap-1.5 text-callout transition-colors"
-        style={{ color: 'var(--color-accent)' }}
+        className="mb-4 inline-flex items-center gap-1.5 text-caption transition-colors hover:opacity-80"
+        style={{ color: 'var(--color-text-tertiary)' }}
       >
-        <ArrowLeft size={16} strokeWidth={1.8} />
+        <ArrowLeft size={14} strokeWidth={1.8} />
         Clients
       </Link>
 
       {/* Header */}
       <motion.div
-        className="mb-8 flex items-center gap-5"
+        className="mb-6 flex items-center gap-5"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={smooth}
@@ -172,11 +204,50 @@ export function PatientDetail({
 
       {/* Info cards grid */}
       <motion.div
-        className="grid gap-5 sm:grid-cols-2"
+        className="grid gap-4 sm:grid-cols-2"
         variants={staggerContainer}
         initial="hidden"
         animate="show"
       >
+        {/* Treatment Plan */}
+        <motion.div variants={cardItem}>
+          <InfoCard
+            icon={<Target size={18} strokeWidth={1.8} />}
+            title="Treatment Plan"
+            emptyText="No active treatment plan"
+            isEmpty={!treatmentPlan}
+          >
+            {treatmentPlan && (
+              <button
+                onClick={() => setSelectedPlanId(treatmentPlan.id)}
+                className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-2 py-1.5 text-left transition-colors hover:bg-[var(--color-bg-tertiary)]"
+              >
+                <div>
+                  <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
+                    v{treatmentPlan.version} &middot; {treatmentPlan.goals.length} {treatmentPlan.goals.length === 1 ? 'goal' : 'goals'}
+                  </p>
+                  <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                    Review: {treatmentPlan.review_date}
+                  </p>
+                </div>
+                <span
+                  className="rounded-full px-2 py-0.5 text-caption"
+                  style={{
+                    background: treatmentPlan.status === 'active'
+                      ? 'color-mix(in srgb, var(--color-success) 12%, transparent)'
+                      : 'var(--color-bg-tertiary)',
+                    color: treatmentPlan.status === 'active'
+                      ? 'var(--color-success)'
+                      : 'var(--color-text-secondary)',
+                  }}
+                >
+                  {treatmentPlan.status}
+                </span>
+              </button>
+            )}
+          </InfoCard>
+        </motion.div>
+
         {/* Diagnoses */}
         <motion.div variants={cardItem}>
           <InfoCard
@@ -377,6 +448,12 @@ export function PatientDetail({
         urId={selectedURId}
         onClose={() => setSelectedURId(null)}
       />
+
+      {/* Treatment Plan Viewer */}
+      <TreatmentPlanDetail
+        planId={selectedPlanId}
+        onClose={() => setSelectedPlanId(null)}
+      />
     </div>
   );
 }
@@ -396,29 +473,33 @@ function InfoCard({
   isEmpty: boolean;
   children: React.ReactNode;
 }) {
+  if (isEmpty) {
+    return (
+      <div className="flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-3"
+        style={{ border: '1px dashed var(--color-border)' }}>
+        <span style={{ color: 'var(--color-text-tertiary)' }}>{icon}</span>
+        <span className="text-callout" style={{ color: 'var(--color-text-tertiary)' }}>{title}</span>
+        <span className="text-caption ml-auto" style={{ color: 'var(--color-text-tertiary)' }}>{emptyText}</span>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="rounded-[var(--radius-lg)] p-5"
+      className="rounded-[var(--radius-lg)] p-4"
       style={{
         background: 'var(--color-bg-card)',
         border: '1px solid var(--color-border)',
         boxShadow: 'var(--shadow-card)',
       }}
     >
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         <span style={{ color: 'var(--color-accent)' }}>{icon}</span>
-        <h3 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
+        <h3 className="text-callout font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           {title}
         </h3>
       </div>
-
-      {isEmpty ? (
-        <p className="text-footnote" style={{ color: 'var(--color-text-tertiary)' }}>
-          {emptyText}
-        </p>
-      ) : (
-        children
-      )}
+      {children}
     </div>
   );
 }

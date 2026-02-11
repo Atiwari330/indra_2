@@ -22,6 +22,19 @@ npx tsx scripts/run-intent.ts "Write a progress note for John Doe"  # Interactiv
 npx tsx scripts/test-workflows.ts                                    # 5-scenario automated test suite
 npx tsx scripts/seed-canary-data.ts                                  # Seed additional test data
 npx tsx scripts/seed-test-data.ts                                    # Verify seed data integrity
+npx tsx scripts/cleanup-test-data.ts                                  # Clean up test data
+npx tsx scripts/check-run.ts                                          # Check AI run status
+```
+
+## Testing
+
+Tests live in `tests/**/*.test.ts` (unit and integration). Vitest runs in node environment with `@` path alias.
+
+```bash
+npm run test                                          # Watch mode
+npm run test:run                                      # Single run (CI)
+npx vitest run tests/unit/ai/orchestrator.test.ts     # Single file
+npx vitest run -t "test name pattern"                 # By test name
 ```
 
 ## Git & Planning Workflow
@@ -45,7 +58,7 @@ User prompt ("Write a note for John Doe")
     → loadPatientContextForPrompt() (8-entity parallel query)
     → runOrchestrator() (phased tool access loop, max 10 steps)
       → Steps 1-2: Lookup only (find_patient, get_patient_context, resolve_encounter)
-      → Steps 3-7: Lookup + Action + Terminal (all 9 tools)
+      → Steps 3-7: Lookup + Action + Terminal (all tools)
       → Steps 8-10: Terminal only (submit_results, ask_clarification)
     → Store proposed actions in ai_proposed_actions
     → Run status → ready_to_commit
@@ -70,13 +83,13 @@ User prompt ("Write a note for John Doe")
 - `src/ai/run-manager.ts` — Full lifecycle: create run → classify intent → load context → orchestrate → persist steps → handle terminal tool
 - `src/ai/context-loader.ts` — Formats patient context as human-readable text for the system prompt
 - `src/ai/system-prompt.ts` — Dynamic prompt builder with compliance rules and SOAP requirements
-- `src/ai/tools/` — All 9 tools (3 lookup, 4 action, 2 terminal)
+- `src/ai/tools/` — All 11 tools (3 lookup, 6 action, 2 terminal)
 - `src/services/commit.service.ts` — Trust boundary: proposed actions → clinical records
 - `src/services/patient.service.ts` — Patient search + `getPatientContext()` (loads diagnoses, meds, notes, treatment plan, insurance, encounters, appointments in parallel)
 - `src/lib/api-helpers.ts` — `getAuthContext()`, `getAdminClient()`, response helpers
 - `src/lib/schemas/` — Zod validation schemas for all API boundaries
 - `src/lib/types/database.ts` — Auto-generated from Supabase (regenerate with `npm run db:types`)
-- `supabase/migrations/` — 8 sequential migrations (platform → clinical → billing → AI → audit → RLS → seed)
+- `supabase/migrations/` — Sequential migrations (platform → clinical → billing → AI → audit → RLS → seed)
 
 ## SDK & Library Gotchas
 

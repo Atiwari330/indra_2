@@ -287,12 +287,17 @@ async function handleSubmitResults(
   const actionGroupId = crypto.randomUUID();
   const capturedPayloads = extractCapturedPayloads(result);
 
+  console.log(`[run-manager] submit_results: ${(args.proposed_actions ?? []).length} proposed action(s)`);
+  console.log(`[run-manager] Captured payloads from tool results: ${[...capturedPayloads.keys()].join(', ') || '(none)'}`);
+
   const proposedActions = [];
   for (let i = 0; i < (args.proposed_actions ?? []).length; i++) {
     const pa = args.proposed_actions[i];
     const captured = capturedPayloads.get(pa.action_type)?.shift();
+    const usedCaptured = !!captured;
     const payload = captured?.payload ?? pa.payload;
     const targetTable = captured?.target_table ?? pa.target_table;
+    console.log(`[run-manager] Action[${i}]: type=${pa.action_type} | usedCapturedPayload=${usedCaptured} | table=${targetTable} | payload keys: ${Object.keys(payload).join(', ')}`);
     const action = await aiRunService.createProposedAction(client, runId, orgId, {
       action_group: actionGroupId,
       action_group_label: pa.description,

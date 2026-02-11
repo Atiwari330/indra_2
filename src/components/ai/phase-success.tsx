@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Check, FileText, ClipboardList } from 'lucide-react';
+import { Check, FileText, ClipboardList, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
@@ -16,11 +16,14 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
   const { dismiss } = useAgentContext();
   const router = useRouter();
 
+  const hasTreatmentPlan = run.proposedActions.some(a => a.actionType === 'treatment_plan');
   const hasUR = run.proposedActions.some(a => a.actionType === 'utilization_review');
   const hasNote = run.proposedActions.some(a => a.actionType === 'note');
 
   const handleViewDocument = () => {
-    if (hasUR) {
+    if (hasTreatmentPlan) {
+      window.dispatchEvent(new CustomEvent('indra:view-treatment-plan'));
+    } else if (hasUR) {
       window.dispatchEvent(new CustomEvent('indra:view-ur'));
     } else {
       window.dispatchEvent(new CustomEvent('indra:view-note'));
@@ -34,8 +37,8 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
     router.refresh();
   };
 
-  const ViewIcon = hasUR ? ClipboardList : FileText;
-  const viewLabel = hasUR ? 'View Utilization Review' : 'View in Chart';
+  const ViewIcon = hasTreatmentPlan ? Target : hasUR ? ClipboardList : FileText;
+  const viewLabel = hasTreatmentPlan ? 'View Treatment Plan' : hasUR ? 'View Utilization Review' : 'View in Chart';
 
   return (
     <div className="flex flex-col items-center justify-center py-12">
@@ -64,7 +67,7 @@ export function PhaseSuccess({ run }: PhaseSuccessProps) {
       )}
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        {(hasUR || hasNote) && (
+        {(hasTreatmentPlan || hasUR || hasNote) && (
           <button
             onClick={handleViewDocument}
             className="flex items-center justify-center gap-2 rounded-[var(--radius-md)] px-6 py-2.5 text-callout font-medium text-white transition-opacity"

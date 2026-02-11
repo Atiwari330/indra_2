@@ -7,10 +7,12 @@ import { useSidebar } from './sidebar-provider';
 import { Avatar } from '../ui/avatar';
 import { gentle } from '@/lib/animations';
 
+const isUUID = (s: string) => /^[0-9a-f]{8}-/i.test(s);
+
 function useBreadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split('/').filter(Boolean);
-  const crumbs = ['Home', ...segments.map((s) => s.charAt(0).toUpperCase() + s.slice(1))];
+  const crumbs = ['Home', ...segments.filter((s) => !isUUID(s)).map((s) => s.charAt(0).toUpperCase() + s.slice(1))];
   return crumbs;
 }
 

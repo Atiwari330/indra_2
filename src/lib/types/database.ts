@@ -1382,6 +1382,7 @@ export type Database = {
       }
       treatment_plans: {
         Row: {
+          ai_run_id: string | null
           created_at: string
           diagnosis_codes: Json | null
           goals: Json | null
@@ -1399,6 +1400,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          ai_run_id?: string | null
           created_at?: string
           diagnosis_codes?: Json | null
           goals?: Json | null
@@ -1416,6 +1418,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          ai_run_id?: string | null
           created_at?: string
           diagnosis_codes?: Json | null
           goals?: Json | null
@@ -1433,6 +1436,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "treatment_plans_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "treatment_plans_org_id_fkey"
             columns: ["org_id"]
@@ -1633,6 +1643,7 @@ export type Database = {
         | "update_medication"
         | "create_appointment"
         | "generate_utilization_review"
+        | "create_treatment_plan"
       ai_run_status:
         | "pending"
         | "running"
@@ -1821,6 +1832,7 @@ export const Constants = {
         "update_medication",
         "create_appointment",
         "generate_utilization_review",
+        "create_treatment_plan",
       ],
       ai_run_status: [
         "pending",

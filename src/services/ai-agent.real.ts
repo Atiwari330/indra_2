@@ -16,6 +16,7 @@ const ACTION_TYPE_MAP: Record<string, ProposedAction['actionType']> = {
   create_appointment: 'appointment',
   suggest_billing: 'billing',
   generate_utilization_review: 'utilization_review',
+  create_treatment_plan: 'treatment_plan',
 };
 
 const STEP_LABEL_MAP: Record<string, string> = {
@@ -27,6 +28,7 @@ const STEP_LABEL_MAP: Record<string, string> = {
   suggest_billing_codes: 'Selecting billing codes',
   update_medication: 'Updating medication',
   generate_utilization_review: 'Generating utilization review',
+  create_treatment_plan: 'Generating treatment plan',
   submit_results: 'Finalizing results',
   ask_clarification: 'Requesting clarification',
 };

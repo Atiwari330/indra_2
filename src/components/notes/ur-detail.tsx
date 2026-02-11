@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, Loader2, ChevronDown, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { X, Check, Loader2, ClipboardCheck } from 'lucide-react';
 import { slideOver, backdropFade } from '@/lib/animations';
 
 interface URData {
@@ -42,32 +42,13 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   },
 };
 
-function SectionCard({ title, children, defaultOpen = true }: {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-[var(--radius-md)] overflow-hidden"
-      style={{ border: '1px solid var(--color-border)' }}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors"
-        style={{ background: 'var(--color-bg-secondary)' }}
-      >
-        {open ? <ChevronDown size={14} style={{ color: 'var(--color-text-tertiary)' }} /> : <ChevronRight size={14} style={{ color: 'var(--color-text-tertiary)' }} />}
-        <span className="text-caption font-semibold tracking-wide uppercase" style={{ color: 'var(--color-text-tertiary)' }}>
-          {title}
-        </span>
-      </button>
-      {open && (
-        <div className="px-4 py-3" style={{ background: 'var(--color-bg-card)' }}>
-          {children}
-        </div>
-      )}
+    <div>
+      <h3 className="text-footnote font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+        {title}
+      </h3>
+      {children}
     </div>
   );
 }
@@ -160,6 +141,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
     estimated_discharge_criteria?: string;
   } | undefined;
 
+  const formattedDate = ur
+    ? new Date(ur.created_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+      })
+    : '';
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -196,30 +183,37 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between px-6 py-4"
+              className="px-6 py-4"
               style={{ borderBottom: '1px solid var(--color-separator)' }}
             >
-              <div className="flex items-center gap-3">
-                <h2 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
-                  Utilization Review
-                </h2>
-                {ur && (
-                  <span
-                    className="rounded-full px-2 py-0.5 text-caption font-medium"
-                    style={{ background: statusStyle.bg, color: statusStyle.color }}
-                  >
-                    {ur.status.replace(/_/g, ' ')}
-                  </span>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
+                    Utilization Review
+                  </h2>
+                  {ur && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-caption font-medium"
+                      style={{ background: statusStyle.bg, color: statusStyle.color }}
+                    >
+                      {ur.status.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="rounded-full p-1.5 transition-colors"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  aria-label="Close panel"
+                >
+                  <X size={18} strokeWidth={1.8} />
+                </button>
               </div>
-              <button
-                onClick={onClose}
-                className="rounded-full p-1.5 transition-colors"
-                style={{ color: 'var(--color-text-secondary)' }}
-                aria-label="Close panel"
-              >
-                <X size={18} strokeWidth={1.8} />
-              </button>
+              {ur && (
+                <p className="mt-1 text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                  {ur.review_type.replace(/_/g, ' ')} &middot; {formattedDate}
+                </p>
+              )}
             </div>
 
             {/* Body */}
@@ -241,36 +235,21 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
               )}
 
               {ur && !loading && (
-                <div className="space-y-4">
-                  {/* Date & type */}
-                  <div className="flex items-center gap-3">
-                    <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-                      {new Date(ur.created_at).toLocaleDateString('en-US', {
-                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-                      })}
-                    </p>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-caption font-medium"
-                      style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }}
-                    >
-                      {ur.review_type}
-                    </span>
-                  </div>
-
+                <div className="space-y-6">
                   {/* 1. Patient Demographics */}
                   {demographics && (
-                    <SectionCard title="Patient Demographics">
+                    <Section title="Patient Demographics">
                       <div className="space-y-1">
                         {demographics.name && <Row label="Name" value={demographics.name} />}
                         {demographics.date_of_birth && <Row label="DOB" value={demographics.date_of_birth} />}
                         {demographics.gender && <Row label="Gender" value={demographics.gender} />}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 2. Authorization Summary */}
                   {authSummary && (
-                    <SectionCard title="Authorization Summary">
+                    <Section title="Authorization Summary">
                       <div className="space-y-1">
                         {authSummary.payer_name && <Row label="Payer" value={authSummary.payer_name} />}
                         {authSummary.member_id && <Row label="Member ID" value={authSummary.member_id} />}
@@ -280,12 +259,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           <Row label="Sessions" value={`${authSummary.sessions_used ?? 0} used / ${authSummary.sessions_authorized} authorized (${authSummary.sessions_remaining ?? 0} remaining)`} />
                         )}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 3. Diagnoses */}
                   {diagnoses && diagnoses.length > 0 && (
-                    <SectionCard title="Diagnoses">
+                    <Section title="Diagnoses">
                       <div className="space-y-2">
                         {diagnoses.map((d, i) => (
                           <div key={i}>
@@ -309,12 +288,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         ))}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 4. Treatment Summary */}
                   {treatment && (
-                    <SectionCard title="Treatment Summary">
+                    <Section title="Treatment Summary">
                       <div className="space-y-1">
                         {treatment.treatment_start_date && <Row label="Start Date" value={treatment.treatment_start_date} />}
                         {treatment.modality && <Row label="Modality" value={treatment.modality} />}
@@ -338,12 +317,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         )}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 5. Assessment Score Trends */}
                   {scores && scores.length > 0 && (
-                    <SectionCard title="Assessment Score Trends">
+                    <Section title="Assessment Score Trends">
                       <div className="space-y-3">
                         {scores.map((s, i) => (
                           <div key={i}>
@@ -357,7 +336,7 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                               }}>{s.trend}</span>
                             </div>
                             <p className="mt-0.5 text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-                              Scores: {s.scores.map(sc => sc.score).join(' → ')}
+                              Scores: {s.scores.map(sc => sc.score).join(' \u2192 ')}
                             </p>
                             <p className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
                               {s.clinical_interpretation}
@@ -365,12 +344,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         ))}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 6. Treatment Goal Progress */}
                   {goals && goals.length > 0 && (
-                    <SectionCard title="Treatment Goal Progress">
+                    <Section title="Treatment Goal Progress">
                       <div className="space-y-2">
                         {goals.map((g, i) => (
                           <div key={i}>
@@ -388,12 +367,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         ))}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 7. Risk Assessment */}
                   {risk && (
-                    <SectionCard title="Risk Assessment">
+                    <Section title="Risk Assessment">
                       <div className="space-y-1">
                         {risk.current_risk_level && (
                           <div className="flex items-center gap-2">
@@ -426,12 +405,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                         )}
                         {risk.safety_plan_status && <Row label="Safety Plan" value={risk.safety_plan_status} />}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 8. Medical Necessity */}
                   {necessity && (
-                    <SectionCard title="Medical Necessity">
+                    <Section title="Medical Necessity">
                       <div className="space-y-2">
                         {necessity.justification && (
                           <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
@@ -461,12 +440,12 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         )}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
 
                   {/* 9. Continued Treatment Recommendation */}
                   {recommendation && (
-                    <SectionCard title="Continued Treatment Recommendation">
+                    <Section title="Continued Treatment Recommendation">
                       <div className="space-y-1">
                         {recommendation.sessions_requested != null && <Row label="Sessions Requested" value={String(recommendation.sessions_requested)} />}
                         {recommendation.recommended_frequency && <Row label="Frequency" value={recommendation.recommended_frequency} />}
@@ -493,7 +472,7 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                           </div>
                         )}
                       </div>
-                    </SectionCard>
+                    </Section>
                   )}
                 </div>
               )}
@@ -523,19 +502,13 @@ export function URDetail({ urId, onClose, onApproved }: URDetailProps) {
                     {approving ? 'Approving...' : 'Approve Review'}
                   </button>
                 ) : (
-                  <div className="flex items-center justify-center gap-2 py-2">
-                    <div
-                      className="flex h-6 w-6 items-center justify-center rounded-full"
-                      style={{ background: 'var(--color-success)' }}
-                    >
-                      <Check size={14} strokeWidth={3} className="text-white" />
-                    </div>
-                    <span className="text-callout" style={{ color: 'var(--color-text-secondary)' }}>
-                      {ur.status === 'approved' ? 'Approved' : ur.status.replace(/_/g, ' ')}
+                  <div className="flex items-center justify-center gap-1.5 py-2">
+                    <Check size={14} style={{ color: 'var(--color-success)' }} />
+                    <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+                      Approved
                       {ur.approved_at && (
                         <> &middot; {new Date(ur.approved_at).toLocaleDateString('en-US', {
                           month: 'short', day: 'numeric', year: 'numeric',
-                          hour: 'numeric', minute: '2-digit',
                         })}</>
                       )}
                     </span>

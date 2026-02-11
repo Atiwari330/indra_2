@@ -28,8 +28,8 @@ export function SOAPNoteContent({ content, compact = false }: SOAPNoteContentPro
         return (
           <div key={key}>
             <h4
-              className="text-caption font-semibold uppercase tracking-wide"
-              style={{ color: 'var(--color-text-tertiary)' }}
+              className="text-footnote font-medium"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               {label}
             </h4>
