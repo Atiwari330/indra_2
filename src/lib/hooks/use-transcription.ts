@@ -7,6 +7,7 @@ const EXTENSION_ID = process.env.NEXT_PUBLIC_EXTENSION_ID ?? '';
 
 interface TranscriptionState {
   isActive: boolean;
+  awaitingCapture: boolean;
   sessionId: string | null;
   patientId: string | null;
   patientName: string | null;
@@ -16,6 +17,7 @@ interface TranscriptionState {
 export function useTranscription() {
   const [state, setState] = useState<TranscriptionState>({
     isActive: false,
+    awaitingCapture: false,
     sessionId: null,
     patientId: null,
     patientName: null,
@@ -45,6 +47,20 @@ export function useTranscription() {
     }
   }, []);
 
+  const pollForCaptureStart = useCallback(() => {
+    const interval = setInterval(async () => {
+      const status = await sendToExtension({ type: 'get-status' });
+      if (status?.recording) {
+        clearInterval(interval);
+        setState(prev => ({ ...prev, awaitingCapture: false }));
+        console.log('[TranscriptionHook] Capture started, awaitingCapture cleared');
+      }
+    }, 500);
+
+    // Stop polling after 2 minutes
+    setTimeout(() => clearInterval(interval), 120_000);
+  }, []);
+
   const startSession = useCallback(async (
     patientId: string,
     patientName: string,
@@ -72,10 +88,10 @@ export function useTranscription() {
       const { id: sessionId, wsUrl } = await res.json();
       console.log(`[TranscriptionHook] Session created: ${sessionId}, wsUrl: ${wsUrl}`);
 
-      // 2. Signal Chrome extension to start capture
+      // 2. Signal Chrome extension to prepare capture (two-step flow)
       if (EXTENSION_ID) {
         const extResponse = await sendToExtension({
-          type: 'start-recording',
+          type: 'prepare-recording',
           sessionId,
           wsUrl,
         });
@@ -83,18 +99,24 @@ export function useTranscription() {
         if (extResponse?.error) {
           throw new Error(`Extension error: ${extResponse.error}`);
         }
-        console.log(`[TranscriptionHook] Extension started recording: ${extResponse?.status}`);
+        console.log(`[TranscriptionHook] Extension response: ${extResponse?.status}`);
       } else {
         console.warn('[TranscriptionHook] No extension ID — session created but no audio capture');
       }
 
       setState({
         isActive: true,
+        awaitingCapture: true,
         sessionId,
         patientId,
         patientName,
         error: null,
       });
+
+      // Poll extension status until capture actually starts
+      if (EXTENSION_ID) {
+        pollForCaptureStart();
+      }
 
       return sessionId;
     } catch (err) {
@@ -103,7 +125,7 @@ export function useTranscription() {
       setState(prev => ({ ...prev, error: message }));
       return null;
     }
-  }, []);
+  }, [pollForCaptureStart]);
 
   const stopSession = useCallback(async () => {
     if (!state.sessionId) return;
@@ -125,6 +147,7 @@ export function useTranscription() {
 
       setState({
         isActive: false,
+        awaitingCapture: false,
         sessionId: null,
         patientId: null,
         patientName: null,
@@ -140,6 +163,7 @@ export function useTranscription() {
   const closePanel = useCallback(() => {
     setState({
       isActive: false,
+      awaitingCapture: false,
       sessionId: null,
       patientId: null,
       patientName: null,

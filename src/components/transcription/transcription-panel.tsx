@@ -17,6 +17,7 @@ interface TranscriptionPanelProps {
   sessionId: string;
   patientName: string;
   patientId: string;
+  awaitingCapture?: boolean;
   onStop: () => void;
   onClose: () => void;
 }
@@ -25,6 +26,7 @@ export function TranscriptionPanel({
   sessionId,
   patientName,
   patientId,
+  awaitingCapture,
   onStop,
   onClose,
 }: TranscriptionPanelProps) {
@@ -176,9 +178,11 @@ export function TranscriptionPanel({
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4">
         {segments.length === 0 && !interimSegment && (
           <div className="flex flex-col items-center justify-center py-12">
-            <Mic size={32} style={{ color: 'var(--color-text-tertiary)' }} />
-            <p className="mt-3 text-footnote" style={{ color: 'var(--color-text-tertiary)' }}>
-              Listening for audio...
+            <Mic size={32} style={{ color: awaitingCapture ? 'var(--color-warning, #f59e0b)' : 'var(--color-text-tertiary)' }} />
+            <p className="mt-3 text-footnote text-center" style={{ color: awaitingCapture ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
+              {awaitingCapture
+                ? 'Click the Indra Scribe extension icon in your toolbar to start audio capture.'
+                : 'Listening for audio...'}
             </p>
           </div>
         )}

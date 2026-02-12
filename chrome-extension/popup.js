@@ -2,7 +2,8 @@
  * Indra Scribe — Popup Script
  *
  * Shows recording status, timer, and stop button.
- * Recording is initiated from the Indra web app, not from the popup.
+ * When a pending capture exists, auto-calls tabCapture.getMediaStreamId()
+ * (popup open = user gesture = valid for tabCapture).
  */
 
 const statusDot = document.getElementById('status-dot');
@@ -20,8 +21,54 @@ chrome.runtime.sendMessage({ type: 'get-status' }, (state) => {
     showError('Cannot connect to extension background');
     return;
   }
+
+  // If there's a pending capture, auto-initiate tabCapture
+  if (state.pendingCapture) {
+    handlePendingCapture(state.pendingCapture);
+    return;
+  }
+
   updateUI(state);
 });
+
+async function handlePendingCapture(pending) {
+  statusDot.className = 'status-indicator recording';
+  statusText.textContent = 'Starting capture...';
+  controlsEl.innerHTML = `
+    <button class="btn-secondary" disabled>Capturing...</button>
+  `;
+
+  try {
+    // This works because the popup was opened by a user gesture (clicking the icon)
+    const streamId = await chrome.tabCapture.getMediaStreamId({
+      targetTabId: pending.tabId,
+    });
+
+    console.log('[Indra Scribe Popup] Got stream ID, sending to service worker');
+
+    // Send streamId to service worker to complete the capture
+    chrome.runtime.sendMessage(
+      {
+        type: 'execute-capture',
+        streamId,
+        wsUrl: pending.wsUrl,
+        sessionId: pending.sessionId,
+      },
+      (response) => {
+        if (chrome.runtime.lastError || response?.error) {
+          showError(response?.error || chrome.runtime.lastError.message);
+          return;
+        }
+
+        console.log('[Indra Scribe Popup] Capture started successfully');
+        updateUI({ recording: true, sessionId: pending.sessionId, tabId: pending.tabId });
+      }
+    );
+  } catch (err) {
+    console.error('[Indra Scribe Popup] tabCapture failed:', err);
+    showError(`Capture failed: ${err.message}`);
+  }
+}
 
 function updateUI(state) {
   if (state.recording) {
@@ -39,6 +86,12 @@ function updateUI(state) {
       startTime = data.recordingStartTime || Date.now();
       startTimer();
     });
+  } else if (state.pendingCapture) {
+    statusDot.className = 'status-indicator recording';
+    statusText.textContent = 'Pending capture...';
+    controlsEl.innerHTML = `
+      <button class="btn-secondary" disabled>Waiting for capture...</button>
+    `;
   } else {
     statusDot.className = 'status-indicator';
     statusText.textContent = 'Not recording';

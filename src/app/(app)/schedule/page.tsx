@@ -273,6 +273,7 @@ export default function SchedulePage() {
             sessionId={transcription.sessionId}
             patientName={transcription.patientName}
             patientId={transcription.patientId}
+            awaitingCapture={transcription.awaitingCapture}
             onStop={handleStopScribe}
             onClose={transcription.closePanel}
           />

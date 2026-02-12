@@ -5,11 +5,18 @@
  * 1. Messages from the Indra web app (via externally_connectable)
  * 2. Messages from the popup
  * 3. Creating/managing the offscreen document for audio capture
- * 4. Getting tabCapture stream IDs
+ * 4. Two-step capture flow: prepare → popup → execute
+ *
+ * tabCapture.getMediaStreamId() requires a user gesture (clicking the
+ * extension icon). External messages do NOT count as a gesture, so the
+ * web app sends 'prepare-recording' → service worker stores pending
+ * state → user clicks icon → popup calls tabCapture → sends streamId
+ * back here via 'execute-capture'.
  */
 
 const OFFSCREEN_URL = 'offscreen.html';
 let currentState = { recording: false, sessionId: null, tabId: null };
+let pendingCapture = null; // { sessionId, wsUrl, tabId }
 
 // ── External Messages (from Indra web app) ──────────────────────
 
@@ -21,8 +28,9 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       sendResponse({ status: 'ok', version: chrome.runtime.getManifest().version });
       break;
 
+    case 'prepare-recording':
     case 'start-recording':
-      handleStartRecording(message, sender.tab?.id)
+      handlePrepareRecording(message, sender.tab?.id)
         .then(result => sendResponse(result))
         .catch(err => sendResponse({ error: err.message }));
       return true; // async response
@@ -34,7 +42,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return true;
 
     case 'get-status':
-      sendResponse(currentState);
+      sendResponse({ ...currentState, pendingCapture });
       break;
 
     default:
@@ -48,8 +56,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('[Indra Scribe] Internal message:', message.type);
 
   switch (message.type) {
-    case 'start-recording':
-      handleStartRecording(message)
+    case 'execute-capture':
+      handleExecuteCapture(message)
         .then(result => sendResponse(result))
         .catch(err => sendResponse({ error: err.message }));
       return true;
@@ -61,7 +69,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case 'get-status':
-      sendResponse(currentState);
+      sendResponse({ ...currentState, pendingCapture });
       break;
 
     case 'offscreen-ready':
@@ -80,9 +88,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// ── Recording Logic ─────────────────────────────────────────────
+// ── Prepare Recording (step 1: store pending, set badge) ────────
 
-async function handleStartRecording(message, externalTabId) {
+async function handlePrepareRecording(message, externalTabId) {
   if (currentState.recording) {
     return { error: 'Already recording', sessionId: currentState.sessionId };
   }
@@ -93,13 +101,11 @@ async function handleStartRecording(message, externalTabId) {
   }
 
   // Determine which tab to capture
-  // If called from external (Indra web app), capture the telehealth tab (active tab)
   let targetTabId = externalTabId;
   if (!targetTabId && message.tabId) {
     targetTabId = message.tabId;
   }
   if (!targetTabId) {
-    // Fall back to currently active tab
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     targetTabId = activeTab?.id;
   }
@@ -108,11 +114,27 @@ async function handleStartRecording(message, externalTabId) {
     throw new Error('No target tab found for capture');
   }
 
-  console.log(`[Indra Scribe] Starting capture for tab ${targetTabId}, session ${sessionId}`);
+  console.log(`[Indra Scribe] Preparing capture for tab ${targetTabId}, session ${sessionId}`);
 
-  // Get a stream ID for the tab's audio
-  const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId });
-  console.log(`[Indra Scribe] Got stream ID: ${streamId.slice(0, 20)}...`);
+  // Store pending state
+  pendingCapture = { sessionId, wsUrl, tabId: targetTabId };
+
+  // Set badge to prompt user to click the icon
+  chrome.action.setBadgeText({ text: 'REC' });
+  chrome.action.setBadgeBackgroundColor({ color: '#dc2626' });
+
+  return { status: 'pending_popup', sessionId };
+}
+
+// ── Execute Capture (step 2: popup sends streamId) ──────────────
+
+async function handleExecuteCapture(message) {
+  const { streamId, wsUrl, sessionId } = message;
+  if (!streamId || !wsUrl || !sessionId) {
+    throw new Error('Missing streamId, wsUrl, or sessionId');
+  }
+
+  console.log(`[Indra Scribe] Executing capture for session ${sessionId}`);
 
   // Create offscreen document
   await ensureOffscreenDocument();
@@ -123,21 +145,41 @@ async function handleStartRecording(message, externalTabId) {
     streamId,
     wsUrl,
     sessionId,
-    targetTabId,
+    targetTabId: pendingCapture?.tabId,
   });
 
   if (response?.error) {
     throw new Error(response.error);
   }
 
-  currentState = { recording: true, sessionId, tabId: targetTabId };
+  currentState = {
+    recording: true,
+    sessionId,
+    tabId: pendingCapture?.tabId ?? null,
+  };
+
+  // Clear pending state and badge
+  pendingCapture = null;
+  chrome.action.setBadgeText({ text: '' });
+
+  // Store start time for timer
+  chrome.storage.local.set({ recordingStartTime: Date.now() });
+
   console.log(`[Indra Scribe] Recording started for session ${sessionId}`);
 
   return { status: 'recording', sessionId };
 }
 
+// ── Stop Recording ──────────────────────────────────────────────
+
 async function handleStopRecording() {
   if (!currentState.recording) {
+    // Also clear any pending capture
+    if (pendingCapture) {
+      pendingCapture = null;
+      chrome.action.setBadgeText({ text: '' });
+      return { status: 'pending_cleared' };
+    }
     return { status: 'not_recording' };
   }
 
@@ -152,6 +194,8 @@ async function handleStopRecording() {
 
   const sessionId = currentState.sessionId;
   currentState = { recording: false, sessionId: null, tabId: null };
+  pendingCapture = null;
+  chrome.action.setBadgeText({ text: '' });
 
   // Close offscreen document
   try {
@@ -159,6 +203,9 @@ async function handleStopRecording() {
   } catch {
     // May already be closed
   }
+
+  // Clean up storage
+  chrome.storage.local.remove('recordingStartTime');
 
   console.log(`[Indra Scribe] Recording stopped for session ${sessionId}`);
   return { status: 'stopped', sessionId };

@@ -34,7 +34,7 @@ CREATE POLICY "org_isolation" ON public.transcription_sessions
 -- Audit trigger (same pattern as other clinical tables)
 CREATE TRIGGER audit_transcription_sessions
   AFTER INSERT OR UPDATE OR DELETE ON public.transcription_sessions
-  FOR EACH ROW EXECUTE FUNCTION public.audit_trigger();
+  FOR EACH ROW EXECUTE FUNCTION public.audit_trigger_func();
 
 -- Index for lookups
 CREATE INDEX idx_transcription_sessions_patient ON public.transcription_sessions(patient_id);
