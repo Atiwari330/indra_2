@@ -94,22 +94,34 @@ export async function createSession(
 
 export async function stopSession(
   client: Client,
-  sessionId: string
+  sessionId: string,
+  externalSegments?: Array<{ speaker: string; text: string; is_final: boolean; timestamp: string }>,
+  externalTranscript?: string
 ): Promise<{ fullTranscript: string }> {
   const session = activeSessions.get(sessionId);
 
-  // Close Deepgram connection
+  // Close Deepgram connection (extension mode)
   if (session?.deepgramSocket?.readyState === WebSocket.OPEN) {
     console.log(`[Deepgram] Sending CloseStream for session ${sessionId}`);
     session.deepgramSocket.send(JSON.stringify({ type: 'CloseStream' }));
     session.deepgramSocket.close();
   }
 
-  // Build full transcript from final segments
-  const finalSegments = (session?.segments ?? []).filter(s => s.is_final);
-  const fullTranscript = finalSegments
-    .map(s => `[${s.speaker}] ${s.text}`)
-    .join('\n');
+  // Build full transcript: use external segments (demo mode) or in-memory segments (extension mode)
+  let finalSegments: Array<{ speaker: string; text: string; is_final: boolean; timestamp: string }>;
+  let fullTranscript: string;
+
+  if (externalSegments) {
+    finalSegments = externalSegments.filter(s => s.is_final);
+    fullTranscript = externalTranscript ?? finalSegments
+      .map(s => `[${s.speaker}] ${s.text}`)
+      .join('\n');
+  } else {
+    finalSegments = (session?.segments ?? []).filter(s => s.is_final);
+    fullTranscript = finalSegments
+      .map(s => `[${s.speaker}] ${s.text}`)
+      .join('\n');
+  }
 
   // Persist to DB
   const { error } = await client

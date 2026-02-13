@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, MicOff, X, FileText, Clock } from 'lucide-react';
 import { useAgentContext } from '@/components/ai/agent-provider';
@@ -18,8 +18,15 @@ interface TranscriptionPanelProps {
   patientName: string;
   patientId: string;
   awaitingCapture?: boolean;
-  onStop: () => void;
+  onStop: () => Promise<void> | void;
   onClose: () => void;
+  // Demo mode: segments managed externally by useDemoTranscription hook
+  demoMode?: boolean;
+  externalSegments?: TranscriptSegment[];
+  externalInterim?: TranscriptSegment | null;
+  externalConnected?: boolean;
+  stopped?: boolean;
+  onLoadDemo?: () => void;
 }
 
 export function TranscriptionPanel({
@@ -29,6 +36,12 @@ export function TranscriptionPanel({
   awaitingCapture,
   onStop,
   onClose,
+  demoMode,
+  externalSegments,
+  externalInterim,
+  externalConnected,
+  stopped,
+  onLoadDemo,
 }: TranscriptionPanelProps) {
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [interimSegment, setInterimSegment] = useState<TranscriptSegment | null>(null);
@@ -46,8 +59,10 @@ export function TranscriptionPanel({
     return () => clearInterval(interval);
   }, []);
 
-  // SSE connection
+  // SSE connection (extension mode only)
   useEffect(() => {
+    if (demoMode) return;
+
     console.log(`[TranscriptionPanel] Connecting SSE for session ${sessionId}`);
 
     const eventSource = new EventSource(`/api/transcription/${sessionId}/stream`);
@@ -98,23 +113,32 @@ export function TranscriptionPanel({
       console.log('[TranscriptionPanel] Closing SSE connection');
       eventSource.close();
     };
-  }, [sessionId]);
+  }, [sessionId, demoMode]);
+
+  // Compute display values: demo mode uses external state, extension mode uses local SSE state
+  const displaySegments = useMemo(() => demoMode ? (externalSegments ?? []) : segments, [demoMode, externalSegments, segments]);
+  const displayInterim = useMemo(() => demoMode ? (externalInterim ?? null) : interimSegment, [demoMode, externalInterim, interimSegment]);
+  const displayConnected = demoMode ? (externalConnected ?? false) : connected;
 
   // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [segments, interimSegment]);
+  }, [displaySegments, displayInterim]);
 
-  const handleGenerateNote = useCallback(() => {
+  const handleGenerateNote = useCallback(async () => {
     console.log(`[TranscriptionPanel] Generate note for session ${sessionId}`);
+    if (!stopped) {
+      await onStop();
+    }
     submitIntent(
       'Generate a progress note from the session transcript',
       patientId,
       { transcriptionSessionId: sessionId }
     );
-  }, [sessionId, patientId, submitIntent]);
+    onClose();
+  }, [sessionId, patientId, submitIntent, stopped, onStop, onClose]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -144,9 +168,9 @@ export function TranscriptionPanel({
           <div className="relative">
             <Mic
               size={18}
-              style={{ color: connected ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
+              style={{ color: displayConnected ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
             />
-            {connected && (
+            {displayConnected && (
               <span
                 className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full"
                 style={{
@@ -176,22 +200,35 @@ export function TranscriptionPanel({
 
       {/* Transcript body */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4">
-        {segments.length === 0 && !interimSegment && (
+        {displaySegments.length === 0 && !displayInterim && (
           <div className="flex flex-col items-center justify-center py-12">
-            <Mic size={32} style={{ color: awaitingCapture ? 'var(--color-warning, #f59e0b)' : 'var(--color-text-tertiary)' }} />
-            <p className="mt-3 text-footnote text-center" style={{ color: awaitingCapture ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
-              {awaitingCapture
+            <Mic size={32} style={{ color: (awaitingCapture && !demoMode) ? 'var(--color-warning, #f59e0b)' : 'var(--color-text-tertiary)' }} />
+            <p className="mt-3 text-footnote text-center" style={{ color: (awaitingCapture && !demoMode) ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
+              {awaitingCapture && !demoMode
                 ? 'Click the Indra Scribe extension icon in your toolbar to start audio capture.'
                 : 'Listening for audio...'}
             </p>
+            {onLoadDemo && (
+              <button
+                onClick={onLoadDemo}
+                className="mt-4 flex items-center gap-1.5 rounded-[var(--radius-md)] px-3 py-1.5 text-caption font-medium transition-colors"
+                style={{
+                  border: '1px solid var(--color-separator)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                <FileText size={12} />
+                Load Demo Transcript
+              </button>
+            )}
           </div>
         )}
 
         <div className="flex flex-col gap-3">
-          {segments.map((seg, i) => (
+          {displaySegments.map((seg, i) => (
             <SegmentBubble key={i} segment={seg} />
           ))}
-          {interimSegment && <SegmentBubble segment={interimSegment} interim />}
+          {displayInterim && <SegmentBubble segment={displayInterim} interim />}
         </div>
       </div>
 
@@ -200,17 +237,19 @@ export function TranscriptionPanel({
         className="flex items-center gap-2 px-5 py-4"
         style={{ borderTop: '1px solid var(--color-separator)' }}
       >
-        <button
-          onClick={onStop}
-          className="flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-medium transition-colors"
-          style={{
-            background: 'color-mix(in srgb, var(--color-error) 12%, transparent)',
-            color: 'var(--color-error)',
-          }}
-        >
-          <MicOff size={16} />
-          Stop Recording
-        </button>
+        {!stopped && (
+          <button
+            onClick={onStop}
+            className="flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-medium transition-colors"
+            style={{
+              background: 'color-mix(in srgb, var(--color-error) 12%, transparent)',
+              color: 'var(--color-error)',
+            }}
+          >
+            <MicOff size={16} />
+            Stop Recording
+          </button>
+        )}
         <button
           onClick={handleGenerateNote}
           className="flex flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-medium text-white transition-colors"

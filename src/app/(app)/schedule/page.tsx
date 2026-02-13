@@ -16,7 +16,10 @@ import { PageHeader } from '@/components/ui/page-header';
 import { GlassPanel } from '@/components/ui/glass-panel';
 import { TranscriptionPanel } from '@/components/transcription/transcription-panel';
 import { useTranscription } from '@/lib/hooks/use-transcription';
+import { useDemoTranscription } from '@/lib/hooks/use-demo-transcription';
 import { cardItem, staggerContainer } from '@/lib/animations';
+
+const useDemo = !process.env.NEXT_PUBLIC_EXTENSION_ID;
 
 interface Appointment {
   id: string;
@@ -36,6 +39,8 @@ export default function SchedulePage() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [startingId, setStartingId] = useState<string | null>(null);
   const transcription = useTranscription();
+  const demoTranscription = useDemoTranscription();
+  const activeTranscription = useDemo ? demoTranscription : transcription;
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -66,12 +71,12 @@ export default function SchedulePage() {
 
     setStartingId(appt.id);
     const patientName = `${appt.patients.first_name} ${appt.patients.last_name}`;
-    await transcription.startSession(appt.patient_id, patientName, appt.id);
+    await activeTranscription.startSession(appt.patient_id, patientName, appt.id);
     setStartingId(null);
   };
 
   const handleStopScribe = async () => {
-    await transcription.stopSession();
+    await activeTranscription.stopSession();
     // Refresh appointments in case status changed
     fetchAppointments();
   };
@@ -159,7 +164,7 @@ export default function SchedulePage() {
               ? `${appt.patients.first_name} ${appt.patients.last_name}`
               : 'Unknown';
             const isScribing =
-              transcription.isActive && transcription.sessionId && transcription.patientId === appt.patient_id;
+              activeTranscription.isActive && activeTranscription.sessionId && activeTranscription.patientId === appt.patient_id;
             const isStarting = startingId === appt.id;
 
             return (
@@ -230,7 +235,7 @@ export default function SchedulePage() {
 
                       <button
                         onClick={() => handleStartScribe(appt)}
-                        disabled={transcription.isActive || isStarting}
+                        disabled={activeTranscription.isActive || isStarting}
                         className="flex items-center gap-1.5 rounded-[var(--radius-md)] px-3 py-1.5 text-caption font-medium text-white transition-colors disabled:opacity-40"
                         style={{
                           background: isScribing ? 'var(--color-error)' : 'var(--color-accent)',
@@ -253,7 +258,7 @@ export default function SchedulePage() {
       )}
 
       {/* Transcription error toast */}
-      {transcription.error && (
+      {activeTranscription.error && (
         <div
           className="fixed bottom-6 right-6 z-50 rounded-[var(--radius-md)] px-4 py-3 text-footnote"
           style={{
@@ -262,20 +267,26 @@ export default function SchedulePage() {
             color: 'var(--color-error)',
           }}
         >
-          {transcription.error}
+          {activeTranscription.error}
         </div>
       )}
 
       {/* Transcription panel */}
       <AnimatePresence>
-        {transcription.isActive && transcription.sessionId && transcription.patientName && transcription.patientId && (
+        {activeTranscription.isActive && activeTranscription.sessionId && activeTranscription.patientName && activeTranscription.patientId && (
           <TranscriptionPanel
-            sessionId={transcription.sessionId}
-            patientName={transcription.patientName}
-            patientId={transcription.patientId}
-            awaitingCapture={transcription.awaitingCapture}
+            sessionId={activeTranscription.sessionId}
+            patientName={activeTranscription.patientName}
+            patientId={activeTranscription.patientId}
+            awaitingCapture={!useDemo && 'awaitingCapture' in activeTranscription ? (activeTranscription as ReturnType<typeof useTranscription>).awaitingCapture : false}
             onStop={handleStopScribe}
-            onClose={transcription.closePanel}
+            onClose={activeTranscription.closePanel}
+            demoMode={useDemo}
+            externalSegments={useDemo ? demoTranscription.segments : undefined}
+            externalInterim={useDemo ? demoTranscription.interimSegment : undefined}
+            externalConnected={useDemo ? demoTranscription.connected : undefined}
+            stopped={useDemo ? demoTranscription.stopped : undefined}
+            onLoadDemo={useDemo ? demoTranscription.loadDemoSegments : undefined}
           />
         )}
       </AnimatePresence>
