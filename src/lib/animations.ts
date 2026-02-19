@@ -115,3 +115,40 @@ export const phaseTransition = {
   visible: { opacity: 1, y: 0, transition: smooth },
   exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
+
+// --- Canvas Variants ---
+
+/** Canvas container — subtle rise + scale (Apple sheet style) */
+export const canvasReveal = {
+  hidden: { opacity: 0, scale: 0.985, y: 12 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { type: 'spring' as const, duration: 0.5, bounce: 0.1 },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.985,
+    y: 12,
+    transition: { duration: 0.18 },
+  },
+};
+
+/** Canvas backdrop — light frosted overlay */
+export const canvasBackdrop = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.25 } },
+  exit: { opacity: 0, transition: { duration: 0.18 } },
+};
+
+/** Processing phase centered content rise */
+export const processingReveal = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { ...smooth, delay: 0.1 },
+  },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
+};

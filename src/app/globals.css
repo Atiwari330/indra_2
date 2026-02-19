@@ -250,6 +250,20 @@ a {
   color: var(--color-text-tertiary);
 }
 
+/* --- Canvas Active State --- */
+main[data-canvas-active] {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+main:not([data-canvas-active]) {
+  filter: none;
+  opacity: 1;
+  transition: filter 0.25s ease, opacity 0.25s ease;
+}
+
 /* ============================================================
    Serenity Theme — Patient Portal
    Applied via .portal-theme class on the portal layout wrapper

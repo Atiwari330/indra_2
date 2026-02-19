@@ -30,9 +30,11 @@ const ACTION_LABELS: Record<string, string> = {
 
 interface ActionCardProps {
   action: ProposedAction;
+  onSelect?: () => void;
+  isSelected?: boolean;
 }
 
-function BillingContent({ payload }: { payload: Record<string, unknown> }) {
+export function BillingContent({ payload }: { payload: Record<string, unknown> }) {
   const cptCode = payload.cpt_code as string | undefined;
   const description = payload.description as string | undefined;
   const diagnosisCodes = payload.diagnosis_codes as string[] | undefined;
@@ -77,7 +79,7 @@ function BillingContent({ payload }: { payload: Record<string, unknown> }) {
   );
 }
 
-function URContent({ content }: { content: Record<string, unknown> }) {
+export function URContent({ content }: { content: Record<string, unknown> }) {
   const diagnoses = content.diagnoses as Array<{
     icd10_code: string; description: string; current_status_summary: string;
   }> | undefined;
@@ -198,7 +200,7 @@ function URContent({ content }: { content: Record<string, unknown> }) {
   );
 }
 
-function TreatmentPlanContent({ payload }: { payload: Record<string, unknown> }) {
+export function TreatmentPlanContent({ payload }: { payload: Record<string, unknown> }) {
   const diagnosisCodes = payload.diagnosis_codes as string[] | undefined;
   const goals = payload.goals as Array<{ goal: string; target_date?: string }> | undefined;
   const objectives = payload.objectives as Array<{ objective: string; frequency?: string }> | undefined;
@@ -276,18 +278,21 @@ function TreatmentPlanContent({ payload }: { payload: Record<string, unknown> })
   );
 }
 
-export function ActionCard({ action }: ActionCardProps) {
+export function ActionCard({ action, onSelect, isSelected }: ActionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const Icon = ACTION_ICONS[action.actionType] || FileText;
   const label = ACTION_LABELS[action.actionType] || action.actionType;
 
   return (
     <div
-      className="rounded-[var(--radius-md)] p-4"
+      className="rounded-[var(--radius-md)] p-4 transition-colors"
       style={{
         background: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
+        borderLeft: isSelected ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
+        cursor: onSelect ? 'pointer' : undefined,
       }}
+      onClick={onSelect}
     >
       <div className="flex items-start gap-3">
         {/* Icon */}
@@ -318,24 +323,26 @@ export function ActionCard({ action }: ActionCardProps) {
           </p>
 
           {/* Expand toggle */}
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="mt-2 flex items-center gap-1 text-caption transition-colors"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            <motion.span
-              animate={{ rotate: expanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ display: 'flex' }}
+          {!onSelect && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+              className="mt-2 flex items-center gap-1 text-caption transition-colors"
+              style={{ color: 'var(--color-text-tertiary)' }}
             >
-              <ChevronDown size={12} />
-            </motion.span>
-            {expanded ? 'Hide details' : 'Show details'}
-          </button>
+              <motion.span
+                animate={{ rotate: expanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ display: 'flex' }}
+              >
+                <ChevronDown size={12} />
+              </motion.span>
+              {expanded ? 'Hide details' : 'Show details'}
+            </button>
+          )}
 
-          {/* Expandable detail */}
+          {/* Expandable detail (only in standalone mode) */}
           <AnimatePresence>
-            {expanded && (
+            {expanded && !onSelect && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
