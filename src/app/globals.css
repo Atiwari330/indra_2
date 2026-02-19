@@ -250,6 +250,16 @@ a {
   color: var(--color-text-tertiary);
 }
 
+/* --- Tracker Pulse Animation --- */
+@keyframes tracker-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 0%, transparent); }
+}
+
+.tracker-pulse-ring {
+  animation: tracker-pulse 2s ease-in-out infinite;
+}
+
 /* --- Canvas Active State --- */
 main[data-canvas-active] {
   filter: blur(3px);

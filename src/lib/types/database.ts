@@ -1318,6 +1318,58 @@ export type Database = {
           },
         ]
       }
+      patient_milestones: {
+        Row: {
+          completed_at: string
+          completed_by: string
+          created_at: string
+          id: string
+          milestone_type: string
+          org_id: string
+          patient_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_by: string
+          created_at?: string
+          id?: string
+          milestone_type: string
+          org_id: string
+          patient_id: string
+        }
+        Update: {
+          completed_at?: string
+          completed_by?: string
+          created_at?: string
+          id?: string
+          milestone_type?: string
+          org_id?: string
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_milestones_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_milestones_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_milestones_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: Json | null
@@ -1583,6 +1635,90 @@ export type Database = {
           },
         ]
       }
+      transcription_sessions: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          encounter_id: string | null
+          ended_at: string | null
+          full_transcript: string | null
+          id: string
+          metadata: Json | null
+          org_id: string
+          patient_id: string
+          provider_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["transcription_status"]
+          transcript_segments: Json
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          encounter_id?: string | null
+          ended_at?: string | null
+          full_transcript?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id: string
+          patient_id: string
+          provider_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["transcription_status"]
+          transcript_segments?: Json
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          encounter_id?: string | null
+          ended_at?: string | null
+          full_transcript?: string | null
+          id?: string
+          metadata?: Json | null
+          org_id?: string
+          patient_id?: string
+          provider_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["transcription_status"]
+          transcript_segments?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcription_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcription_sessions_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcription_sessions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcription_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcription_sessions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treatment_plans: {
         Row: {
           ai_run_id: string | null
@@ -1829,90 +1965,6 @@ export type Database = {
           },
         ]
       }
-      transcription_sessions: {
-        Row: {
-          id: string
-          org_id: string
-          appointment_id: string | null
-          encounter_id: string | null
-          provider_id: string
-          patient_id: string
-          status: "active" | "paused" | "completed" | "failed"
-          transcript_segments: Json
-          full_transcript: string | null
-          started_at: string
-          ended_at: string | null
-          metadata: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          org_id: string
-          appointment_id?: string | null
-          encounter_id?: string | null
-          provider_id: string
-          patient_id: string
-          status?: "active" | "paused" | "completed" | "failed"
-          transcript_segments?: Json
-          full_transcript?: string | null
-          started_at?: string
-          ended_at?: string | null
-          metadata?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          org_id?: string
-          appointment_id?: string | null
-          encounter_id?: string | null
-          provider_id?: string
-          patient_id?: string
-          status?: "active" | "paused" | "completed" | "failed"
-          transcript_segments?: Json
-          full_transcript?: string | null
-          started_at?: string
-          ended_at?: string | null
-          metadata?: Json | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transcription_sessions_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transcription_sessions_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transcription_sessions_encounter_id_fkey"
-            columns: ["encounter_id"]
-            isOneToOne: false
-            referencedRelation: "encounters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transcription_sessions_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transcription_sessions_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -1977,6 +2029,7 @@ export type Database = {
       patient_status: "active" | "inactive" | "discharged"
       portal_sender_type: "patient" | "provider"
       signature_type: "author" | "cosigner" | "supervisor"
+      transcription_status: "active" | "paused" | "completed" | "failed"
       treatment_plan_status: "draft" | "active" | "completed" | "discontinued"
       ur_review_type: "initial" | "concurrent" | "retrospective"
       ur_status:
@@ -2173,6 +2226,7 @@ export const Constants = {
       patient_status: ["active", "inactive", "discharged"],
       portal_sender_type: ["patient", "provider"],
       signature_type: ["author", "cosigner", "supervisor"],
+      transcription_status: ["active", "paused", "completed", "failed"],
       treatment_plan_status: ["draft", "active", "completed", "discontinued"],
       ur_review_type: ["initial", "concurrent", "retrospective"],
       ur_status: [

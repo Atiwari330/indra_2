@@ -27,7 +27,7 @@ export default async function PatientPage({ params }: Props) {
   }
 
   // Fetch related data in parallel
-  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes, intakeNoteRes, latestTranscriptionRes] = await Promise.all([
+  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes, intakeNoteRes, latestTranscriptionRes, milestonesRes, completedEncountersRes] = await Promise.all([
     supabase
       .from('patient_diagnoses')
       .select('id, icd10_code, description, status, is_primary')
@@ -98,6 +98,23 @@ export default async function PatientPage({ params }: Props) {
       .eq('status', 'completed')
       .order('ended_at', { ascending: false })
       .limit(1),
+
+    // Patient milestones (consent toggle)
+    supabase
+      .from('patient_milestones')
+      .select('milestone_type, completed_at, completed_by')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .eq('milestone_type', 'consent_intake_forms')
+      .maybeSingle(),
+
+    // Completed encounter count
+    supabase
+      .from('encounters')
+      .select('id', { count: 'exact', head: true })
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .eq('status', 'completed'),
   ]);
 
   return (
@@ -120,6 +137,11 @@ export default async function PatientPage({ params }: Props) {
         signed_at: treatmentPlanRes.data.signed_at,
         created_at: treatmentPlanRes.data.created_at,
       } : null}
+      consentMilestone={milestonesRes.data ? {
+        completed_at: milestonesRes.data.completed_at,
+        completed_by: milestonesRes.data.completed_by,
+      } : null}
+      completedEncounterCount={completedEncountersRes.count ?? 0}
     />
   );
 }
