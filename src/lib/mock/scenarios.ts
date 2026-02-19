@@ -115,7 +115,89 @@ const medicationUpdate: MockScenario = {
   tokenUsage: { input: 1860, output: 920 },
 };
 
-// ── Scenario 3: Patient Query (info only) ───────────────────────
+// ── Scenario 3: Treatment Plan ───────────────────────────────────
+const treatmentPlan: MockScenario = {
+  id: 'treatment-plan',
+  triggerKeywords: ['treatment plan', 'treatment', 'goals'],
+  steps: [
+    { label: 'Loading patient context', delayMs: 800 },
+    { label: 'Reviewing intake assessment', delayMs: 1000 },
+    { label: 'Analyzing diagnoses', delayMs: 1200 },
+    { label: 'Generating SMART goals', delayMs: 1400 },
+    { label: 'Preparing treatment plan', delayMs: 800 },
+  ],
+  clarifications: [],
+  proposedActions: [
+    {
+      id: 'action-treatment-plan',
+      actionType: 'treatment_plan',
+      description: 'Treatment plan for Generalized Anxiety Disorder and Insomnia',
+      payload: {
+        diagnosis_codes: ['F41.1', 'G47.00'],
+        goals: [
+          {
+            goal: 'Reduce GAD-7 score from 14 (moderate) to below 10 (mild) through CBT-based anxiety management skills',
+            target_date: '2026-05-18',
+          },
+          {
+            goal: 'Improve sleep onset latency from 60+ minutes to under 30 minutes using sleep hygiene and stimulus control techniques',
+            target_date: '2026-04-18',
+          },
+          {
+            goal: 'Decrease avoidance behaviors in social situations by completing a graded exposure hierarchy of at least 5 steps',
+            target_date: '2026-05-18',
+          },
+        ],
+        objectives: [
+          {
+            objective: 'Patient will practice diaphragmatic breathing for 5 minutes when anxiety exceeds 5/10 on subjective distress scale',
+            frequency: 'Daily',
+          },
+          {
+            objective: 'Patient will complete a thought record identifying and challenging at least 3 cognitive distortions per week',
+            frequency: '3x/week',
+          },
+          {
+            objective: 'Patient will follow a consistent sleep-wake schedule within a 30-minute window 6 of 7 nights',
+            frequency: 'Nightly',
+          },
+          {
+            objective: 'Patient will attempt one step on the exposure hierarchy each week and report outcome in session',
+            frequency: 'Weekly',
+          },
+        ],
+        interventions: [
+          {
+            intervention: 'Cognitive Behavioral Therapy (CBT) — individual sessions targeting cognitive distortions, safety behaviors, and avoidance patterns',
+            frequency: 'Weekly, 50 min',
+          },
+          {
+            intervention: 'Psychoeducation on the anxiety cycle, fight-or-flight response, and the relationship between worry and sleep',
+            frequency: 'As needed',
+          },
+          {
+            intervention: 'Sleep hygiene protocol — stimulus control, sleep restriction, and relaxation training',
+            frequency: 'Review weekly',
+          },
+          {
+            intervention: 'Graded exposure therapy for social anxiety situations using collaboratively developed hierarchy',
+            frequency: 'Weekly in-session + homework',
+          },
+        ],
+        review_date: '2026-05-18',
+      },
+      assumptions: [
+        'Primary diagnosis: Generalized Anxiety Disorder (F41.1)',
+        'Secondary diagnosis: Insomnia, unspecified (G47.00)',
+        'GAD-7 baseline score: 14 (moderate)',
+      ],
+    },
+  ],
+  summary: 'Created treatment plan with 3 SMART goals targeting anxiety reduction, sleep improvement, and social exposure for John Doe.',
+  tokenUsage: { input: 2850, output: 1560 },
+};
+
+// ── Scenario 4: Patient Query (info only) ───────────────────────
 const patientQuery: MockScenario = {
   id: 'patient-query',
   triggerKeywords: ['what', 'when', 'how', 'show', 'list', 'tell', 'find'],
@@ -132,7 +214,7 @@ const patientQuery: MockScenario = {
 
 // ── Exports ─────────────────────────────────────────────────────
 
-export const MOCK_SCENARIOS: MockScenario[] = [progressNote, medicationUpdate, patientQuery];
+export const MOCK_SCENARIOS: MockScenario[] = [progressNote, medicationUpdate, treatmentPlan, patientQuery];
 
 /** Pick a scenario by matching keywords in the user's input */
 export function matchScenario(input: string): MockScenario {

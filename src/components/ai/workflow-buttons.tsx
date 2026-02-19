@@ -46,10 +46,10 @@ export function WorkflowButtons({
     });
   }
 
-  if (hasIntakeNote && !hasTreatmentPlan) {
+  if (hasIntakeNote) {
     buttons.push({
       key: 'treatment_plan',
-      label: 'Generate Treatment Plan',
+      label: hasTreatmentPlan ? 'Update Treatment Plan' : 'Generate Treatment Plan',
       icon: Target,
       intent: 'Generate a treatment plan based on the intake assessment',
       options: { evidence },

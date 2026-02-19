@@ -11,11 +11,13 @@ import {
   CalendarDays,
   ClipboardList,
   Target,
+  Plus,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AIInputBar } from '@/components/ai/ai-input-bar';
 import { WorkflowButtons } from '@/components/ai/workflow-buttons';
+import { useAgentContext } from '@/components/ai/agent-provider';
 import { NoteDetail } from '@/components/notes/note-detail';
 import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
@@ -95,6 +97,7 @@ export function PatientDetail({
   recentURs,
   treatmentPlan,
 }: PatientDetailProps) {
+  const { submitIntent } = useAgentContext();
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedURId, setSelectedURId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -251,6 +254,19 @@ export function PatientDetail({
             title="Treatment Plan"
             emptyText="No active treatment plan"
             isEmpty={!treatmentPlan}
+            headerAction={treatmentPlan ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  submitIntent('Generate a treatment plan based on the intake assessment', patient.id, { evidence });
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-[var(--color-bg-tertiary)]"
+                style={{ color: 'var(--color-text-tertiary)' }}
+                title="Update Treatment Plan"
+              >
+                <Plus size={14} strokeWidth={2} />
+              </button>
+            ) : undefined}
           >
             {treatmentPlan && (
               <button
@@ -500,12 +516,14 @@ function InfoCard({
   title,
   emptyText,
   isEmpty,
+  headerAction,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   emptyText: string;
   isEmpty: boolean;
+  headerAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
   if (isEmpty) {
@@ -533,6 +551,7 @@ function InfoCard({
         <h3 className="text-callout font-semibold" style={{ color: 'var(--color-text-primary)' }}>
           {title}
         </h3>
+        {headerAction && <span className="ml-auto">{headerAction}</span>}
       </div>
       {children}
     </div>

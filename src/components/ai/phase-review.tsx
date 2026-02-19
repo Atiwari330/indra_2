@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import type { AgentRun, ProposedAction } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
-import { ActionCard, BillingContent, URContent, TreatmentPlanContent } from './action-card';
+import { ActionCard, BillingContent, URContent } from './action-card';
 import { EvidenceChips } from './evidence-chips';
 import { NoteEditBar } from './note-edit-bar';
 import { Markdown } from '@/components/ui/markdown';
 import { SOAPNoteContent } from '@/components/notes/soap-note-content';
 import { IntakeNoteContent } from '@/components/notes/intake-note-content';
+import { TreatmentPlanNoteContent } from '@/components/notes/treatment-plan-content';
 import { smooth } from '@/lib/animations';
 
 interface PhaseReviewProps {
@@ -34,7 +35,7 @@ function ActionPreview({ action }: { action: ProposedAction }) {
   }
 
   if (action.actionType === 'treatment_plan' && action.payload) {
-    return <TreatmentPlanContent payload={action.payload as Record<string, unknown>} />;
+    return <TreatmentPlanNoteContent payload={action.payload as Record<string, unknown>} compact={false} />;
   }
 
   if (action.actionType === 'utilization_review' && action.payload?.content) {
@@ -64,15 +65,15 @@ function ActionPreview({ action }: { action: ProposedAction }) {
 export function PhaseReview({ run }: PhaseReviewProps) {
   const { commitActions, dismiss, editAction, undoEdit, isEditing, editError, editHistory } = useAgentContext();
 
-  // Auto-select the primary note action, or first action
+  // Auto-select the primary note/treatment_plan action, or first action
   const primaryIndex = run.proposedActions.findIndex(
-    (a) => a.actionType === 'note'
+    (a) => a.actionType === 'note' || a.actionType === 'treatment_plan'
   );
   const defaultId = run.proposedActions[primaryIndex >= 0 ? primaryIndex : 0]?.id;
   const [selectedActionId, setSelectedActionId] = useState<string | undefined>(defaultId);
 
   const selectedAction = run.proposedActions.find((a) => a.id === selectedActionId);
-  const isNoteAction = selectedAction?.actionType === 'note';
+  const isNoteAction = selectedAction?.actionType === 'note' || selectedAction?.actionType === 'treatment_plan';
   const hasHistory = selectedActionId ? (editHistory[selectedActionId]?.length ?? 0) > 0 : false;
 
   return (
