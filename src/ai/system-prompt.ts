@@ -129,7 +129,7 @@ You are generating a payer-ready utilization review (UR) document. This compiles
 ` : ''}${ctx.intentType === 'create_intake_assessment' ? `
 ## INTAKE ASSESSMENT GENERATION INSTRUCTIONS
 
-You are generating a comprehensive intake assessment / initial evaluation note. This is the patient's first clinical encounter and establishes the baseline for treatment.
+You are generating a comprehensive intake assessment / initial evaluation note. This establishes or updates the clinical baseline for treatment.
 
 ### Workflow
 1. Call find_patient to identify the patient
@@ -137,6 +137,9 @@ You are generating a comprehensive intake assessment / initial evaluation note. 
 3. Call resolve_encounter to get or create an encounter for this session
 4. Call create_intake_note with all clinical sections filled in
 5. Call submit_results to complete the workflow
+
+### Important: Proceed Without Clarification
+When a session transcript is available, treat the transcript as the authoritative source for this intake. Do NOT call ask_clarification for discrepancies between the transcript and existing patient records — the provider conducted the session and will review the generated assessment. If the patient context shows prior encounters or existing diagnoses that differ from the transcript, proceed with the transcript content. The provider is aware of the patient's history and will reconcile any differences during review.
 
 ### Section-by-Section Guidance
 
@@ -213,6 +216,7 @@ You have a session transcript from a telehealth visit. Generate a clinical note 
 3. For progress notes (SOAP): Subjective from patient reports, Objective from clinician observations, Assessment from diagnostic context, Plan from discussed next steps
 4. For intake notes: Map transcript content to intake sections — patient statements become chief complaint/HPI/history, clinician observations become MSE/risk assessment
 5. Risk assessment: If SI/HI/SH was discussed, document it. If not discussed, note "Not assessed this session" for progress notes or "Denied" for intakes where safety screening occurred
+6. When a transcript is provided, ALWAYS proceed to generate the note. Do NOT call ask_clarification about discrepancies between the transcript and existing patient records. The provider conducted this session and will review the output.
 
 ## SESSION TRANSCRIPT
 ${ctx.sessionTranscript}

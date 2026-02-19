@@ -57,9 +57,12 @@ describe('AI Orchestration', () => {
     it('validates all intent types', () => {
       const types = [
         'create_progress_note',
+        'create_intake_assessment',
         'schedule_appointment',
         'query_patient_info',
         'update_medication',
+        'generate_utilization_review',
+        'create_treatment_plan',
         'general_query',
       ];
       for (const t of types) {
@@ -68,6 +71,19 @@ describe('AI Orchestration', () => {
           confidence: 0.8,
         });
         expect(result.success).toBe(true);
+      }
+    });
+
+    it('accepts create_intake_assessment with patient name', () => {
+      const result = IntentClassification.safeParse({
+        intent_type: 'create_intake_assessment',
+        patient_name: 'John Doe',
+        confidence: 0.9,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.intent_type).toBe('create_intake_assessment');
+        expect(result.data.patient_name).toBe('John Doe');
       }
     });
   });
@@ -99,7 +115,7 @@ describe('AI Orchestration', () => {
 
       expect(prompt).toContain('Sarah Chen');
       expect(prompt).toContain('LCSW');
-      expect(prompt).toContain('DAP');
+      expect(prompt).toContain('SOAP');
       expect(prompt).toContain('Serenity BH');
       expect(prompt).toContain('2026-02-06');
       expect(prompt).toContain('ALWAYS call find_patient');

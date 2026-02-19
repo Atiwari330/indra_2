@@ -12,7 +12,7 @@ export interface TranscriptSegment {
 const DEMO_SEGMENTS: TranscriptSegment[] = [
   {
     speaker: 'clinician',
-    text: "Good afternoon, Marcus. Come on in, have a seat. How have you been since our last session two weeks ago?",
+    text: "Good afternoon, John. Come on in, have a seat. How have you been since our last session two weeks ago?",
     is_final: true,
     timestamp: new Date().toISOString(),
   },
@@ -48,7 +48,7 @@ const DEMO_SEGMENTS: TranscriptSegment[] = [
   },
   {
     speaker: 'clinician',
-    text: "That's actually real progress, Marcus. Using the thought record even once when you're under pressure is significant. Let's talk about what happened Thursday. How were you sleeping that week?",
+    text: "That's actually real progress, John. Using the thought record even once when you're under pressure is significant. Let's talk about what happened Thursday. How were you sleeping that week?",
     is_final: true,
     timestamp: new Date().toISOString(),
   },
@@ -141,7 +141,7 @@ const DEMO_SEGMENTS: TranscriptSegment[] = [
 const DEMO_INTAKE_SEGMENTS: TranscriptSegment[] = [
   {
     speaker: 'clinician',
-    text: "Hi Marcus, I'm Sarah Chen. Welcome. I know filling out all that paperwork isn't the most fun, so I appreciate your patience. Before we dive in, how are you feeling about being here today?",
+    text: "Hi John, I'm Sarah Chen. Welcome. I know filling out all that paperwork isn't the most fun, so I appreciate your patience. Before we dive in, how are you feeling about being here today?",
     is_final: true,
     timestamp: new Date().toISOString(),
   },
