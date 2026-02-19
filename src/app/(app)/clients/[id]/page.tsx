@@ -27,7 +27,7 @@ export default async function PatientPage({ params }: Props) {
   }
 
   // Fetch related data in parallel
-  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes] = await Promise.all([
+  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes, intakeNoteRes, latestTranscriptionRes] = await Promise.all([
     supabase
       .from('patient_diagnoses')
       .select('id, icd10_code, description, status, is_primary')
@@ -78,6 +78,26 @@ export default async function PatientPage({ params }: Props) {
       .eq('org_id', DEV_ORG_ID)
       .eq('is_current', true)
       .maybeSingle(),
+
+    // Check if intake note exists
+    supabase
+      .from('clinical_notes')
+      .select('id')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .eq('note_type', 'intake')
+      .eq('is_current', true)
+      .limit(1),
+
+    // Latest completed transcription session
+    supabase
+      .from('transcription_sessions')
+      .select('id')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .eq('status', 'completed')
+      .order('ended_at', { ascending: false })
+      .limit(1),
   ]);
 
   return (
@@ -88,6 +108,8 @@ export default async function PatientPage({ params }: Props) {
       recentNotes={notesRes.data ?? []}
       upcomingAppointments={appointmentsRes.data ?? []}
       recentURs={ursRes.data ?? []}
+      hasIntakeNote={(intakeNoteRes.data ?? []).length > 0}
+      latestTranscriptionSessionId={latestTranscriptionRes.data?.[0]?.id ?? null}
       treatmentPlan={treatmentPlanRes.data ? {
         id: treatmentPlanRes.data.id,
         version: treatmentPlanRes.data.version,

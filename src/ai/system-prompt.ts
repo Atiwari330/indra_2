@@ -40,7 +40,7 @@ ${ctx.todayDate}
 
 ## TOOL ORDERING
 Phase 1 (Lookup): find_patient → get_patient_context → resolve_encounter
-Phase 2 (Action): create_progress_note, create_appointment, suggest_billing_codes, update_medication, generate_utilization_review, create_treatment_plan
+Phase 2 (Action): create_progress_note, create_intake_note, create_appointment, suggest_billing_codes, update_medication, generate_utilization_review, create_treatment_plan
 Phase 3 (Complete): submit_results OR ask_clarification
 
 ## DOCUMENTATION STANDARDS — Compliance-Aware Reasoning
@@ -126,6 +126,44 @@ You are generating a payer-ready utilization review (UR) document. This compiles
 - Patient demographics and authorization/insurance details are auto-populated by the service layer — do NOT include them in the tool call.
 - If data is missing or insufficient, list what you assumed in assumptions_made.
 - Use clinical language appropriate for payer review — specific, objective, evidence-based.
+` : ''}${ctx.intentType === 'create_intake_assessment' ? `
+## INTAKE ASSESSMENT GENERATION INSTRUCTIONS
+
+You are generating a comprehensive intake assessment / initial evaluation note. This is the patient's first clinical encounter and establishes the baseline for treatment.
+
+### Workflow
+1. Call find_patient to identify the patient
+2. Call get_patient_context to load any existing clinical history
+3. Call resolve_encounter to get or create an encounter for this session
+4. Call create_intake_note with all clinical sections filled in
+5. Call submit_results to complete the workflow
+
+### Section-by-Section Guidance
+
+**chief_complaint**: The patient's primary reason for seeking treatment, ideally in their own words. Extract from the transcript if available.
+
+**history_of_present_illness**: Detailed narrative of presenting concerns — when symptoms started, what makes them better/worse, severity, frequency, and how they impact daily functioning. This is the core clinical narrative.
+
+**psychiatric_history**: Prior mental health treatment including previous therapy (type, duration, outcome), psychiatric hospitalizations, prior medication trials and responses, and any history of crisis interventions.
+
+**social_history**: Living situation, employment/education, relationship status, social support, substance use history (alcohol, tobacco, cannabis, other), legal history, trauma history, and relevant cultural factors.
+
+**family_history**: Family psychiatric history — depression, anxiety, bipolar, substance use, suicide, psychosis, or other mental health conditions in first-degree relatives.
+
+**mental_status_exam**: Clinical observations — appearance, behavior, psychomotor activity, speech, mood (patient-reported), affect (observed), thought process, thought content, perceptual disturbances, cognition, insight, and judgment.
+
+**risk_assessment_narrative**: Detailed risk assessment including suicidal ideation (current and historical), homicidal ideation, self-harm behaviors, access to means, protective factors (reasons for living, social support, future orientation), and overall risk level determination.
+
+**diagnosis_formulation**: Clinical formulation connecting presenting symptoms to diagnostic impressions with specific ICD-10 codes. Explain how the symptom presentation supports each diagnosis.
+
+**treatment_recommendations**: Recommended treatment approach — modality (CBT, DBT, psychodynamic, etc.), frequency, estimated duration, specific goals for treatment, and any referrals needed (psychiatry, psychological testing, etc.).
+
+### Rules
+- Base ALL content on what was said in the transcript or what exists in the patient context. NEVER fabricate clinical information.
+- When using a transcript, map speaker content to clinical sections: patient statements → chief complaint, HPI, social/family history; clinician observations → MSE, risk assessment.
+- Document all assumptions explicitly in the assumptions_made array.
+- Use clinical language appropriate for a legal medical record.
+- The risk_assessment structured field must always be filled in addition to the narrative.
 ` : ''}${ctx.intentType === 'create_treatment_plan' ? `
 ## TREATMENT PLAN GENERATION INSTRUCTIONS
 
@@ -167,17 +205,14 @@ You are generating a treatment plan for a patient. The plan must tie SMART goals
 ` : ''}${ctx.sessionTranscript ? `
 ## TRANSCRIPT-BASED NOTE GENERATION
 
-You have a session transcript from a telehealth visit. Generate a SOAP progress note based SOLELY on what was said in the transcript.
+You have a session transcript from a telehealth visit. Generate a clinical note based SOLELY on what was said in the transcript. Use create_intake_note for intake assessments or create_progress_note for progress notes, depending on the intent.
 
 ### Rules for Transcript-Based Notes
 1. Extract clinical content from what was actually said — do NOT fabricate observations
 2. Speaker labels: [clinician] = the treating provider, [patient] = the patient
-3. Subjective: Use patient's own words and reported symptoms from the transcript
-4. Objective: Document clinician's observations mentioned in the transcript (affect, engagement, insight)
-5. Assessment: Tie transcript content to active diagnoses from the patient context
-6. Plan: Extract any plans, homework, or follow-up discussed in the transcript
-7. Always include the transcript as source_transcript in the create_progress_note payload
-8. Risk assessment: If SI/HI/SH was discussed, document it. If not discussed, note "Not assessed this session"
+3. For progress notes (SOAP): Subjective from patient reports, Objective from clinician observations, Assessment from diagnostic context, Plan from discussed next steps
+4. For intake notes: Map transcript content to intake sections — patient statements become chief complaint/HPI/history, clinician observations become MSE/risk assessment
+5. Risk assessment: If SI/HI/SH was discussed, document it. If not discussed, note "Not assessed this session" for progress notes or "Denied" for intakes where safety screening occurred
 
 ## SESSION TRANSCRIPT
 ${ctx.sessionTranscript}

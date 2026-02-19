@@ -38,6 +38,7 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [startingId, setStartingId] = useState<string | null>(null);
+  const [activeAppointmentType, setActiveAppointmentType] = useState<string | null>(null);
   const transcription = useTranscription();
   const demoTranscription = useDemoTranscription();
   const activeTranscription = useDemo ? demoTranscription : transcription;
@@ -70,6 +71,7 @@ export default function SchedulePage() {
     if (!appt.patients) return;
 
     setStartingId(appt.id);
+    setActiveAppointmentType(appt.appointment_type);
     const patientName = `${appt.patients.first_name} ${appt.patients.last_name}`;
     await activeTranscription.startSession(appt.patient_id, patientName, appt.id);
     setStartingId(null);
@@ -278,6 +280,7 @@ export default function SchedulePage() {
             sessionId={activeTranscription.sessionId}
             patientName={activeTranscription.patientName}
             patientId={activeTranscription.patientId}
+            appointmentType={activeAppointmentType}
             awaitingCapture={!useDemo && 'awaitingCapture' in activeTranscription ? (activeTranscription as ReturnType<typeof useTranscription>).awaitingCapture : false}
             onStop={handleStopScribe}
             onClose={activeTranscription.closePanel}

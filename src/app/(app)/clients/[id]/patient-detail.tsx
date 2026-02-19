@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import {
@@ -15,9 +15,11 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AIInputBar } from '@/components/ai/ai-input-bar';
+import { WorkflowButtons } from '@/components/ai/workflow-buttons';
 import { NoteDetail } from '@/components/notes/note-detail';
 import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
+import type { EvidenceItem } from '@/lib/types/ai-agent';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
 
@@ -32,6 +34,8 @@ interface PatientDetailProps {
     phone: string | null;
     gender: string | null;
   };
+  hasIntakeNote: boolean;
+  latestTranscriptionSessionId: string | null;
   diagnoses: {
     id: string;
     icd10_code: string;
@@ -82,6 +86,8 @@ interface PatientDetailProps {
 
 export function PatientDetail({
   patient,
+  hasIntakeNote,
+  latestTranscriptionSessionId,
   diagnoses,
   medications,
   recentNotes,
@@ -160,6 +166,26 @@ export function PatientDetail({
     );
   }, []);
 
+  const evidence = useMemo<EvidenceItem[]>(() => {
+    const items: EvidenceItem[] = [];
+    if (diagnoses.length > 0) {
+      items.push({ id: 'dx', label: `${diagnoses.length} diagnos${diagnoses.length === 1 ? 'is' : 'es'}`, category: 'diagnosis' });
+    }
+    if (medications.length > 0) {
+      items.push({ id: 'meds', label: `${medications.length} medication${medications.length === 1 ? '' : 's'}`, category: 'medication' });
+    }
+    if (treatmentPlan) {
+      items.push({ id: 'txplan', label: `Treatment Plan v${treatmentPlan.version}`, category: 'treatment_plan' });
+    }
+    if (recentNotes.length > 0) {
+      items.push({ id: 'notes', label: `Last note ${formatDate(recentNotes[0].created_at.split('T')[0])}`, category: 'note' });
+    }
+    if (latestTranscriptionSessionId) {
+      items.push({ id: 'transcript', label: 'Session transcript', category: 'transcript' });
+    }
+    return items;
+  }, [diagnoses, medications, treatmentPlan, recentNotes, latestTranscriptionSessionId]);
+
   const age = computeAge(patient.dob);
   const fullName = formatName(patient.first_name, patient.last_name);
 
@@ -201,6 +227,15 @@ export function PatientDetail({
           )}
         </div>
       </motion.div>
+
+      {/* Workflow Buttons */}
+      <WorkflowButtons
+        patientId={patient.id}
+        hasIntakeNote={hasIntakeNote}
+        hasTreatmentPlan={!!treatmentPlan}
+        latestTranscriptionSessionId={latestTranscriptionSessionId}
+        evidence={evidence}
+      />
 
       {/* Info cards grid */}
       <motion.div
@@ -321,7 +356,7 @@ export function PatientDetail({
                 >
                   <div>
                     <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
-                      {n.note_type} note
+                      {n.note_type === 'intake' ? 'Intake Assessment' : `${n.note_type} note`}
                     </p>
                     <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
                       {formatDate(n.created_at.split('T')[0])}
@@ -433,7 +468,7 @@ export function PatientDetail({
 
       {/* AI Input Bar */}
       <div className="fixed bottom-6 left-0 right-0 z-30 mx-auto px-8 lg:px-10" style={{ maxWidth: 720 }}>
-        <AIInputBar patientName={patient.first_name} patientId={patient.id} />
+        <AIInputBar patientName={patient.first_name} patientId={patient.id} evidence={evidence} />
       </div>
 
       {/* Note Viewer */}

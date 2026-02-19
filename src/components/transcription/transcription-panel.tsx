@@ -17,6 +17,7 @@ interface TranscriptionPanelProps {
   sessionId: string;
   patientName: string;
   patientId: string;
+  appointmentType?: string | null;
   awaitingCapture?: boolean;
   onStop: () => Promise<void> | void;
   onClose: () => void;
@@ -26,13 +27,16 @@ interface TranscriptionPanelProps {
   externalInterim?: TranscriptSegment | null;
   externalConnected?: boolean;
   stopped?: boolean;
-  onLoadDemo?: () => void;
+  onLoadDemo?: (type?: 'progress' | 'intake') => void;
 }
+
+const INTAKE_TYPES = ['intake', 'initial_evaluation', 'initial_assessment', 'initial_intake'];
 
 export function TranscriptionPanel({
   sessionId,
   patientName,
   patientId,
+  appointmentType,
   awaitingCapture,
   onStop,
   onClose,
@@ -43,6 +47,7 @@ export function TranscriptionPanel({
   stopped,
   onLoadDemo,
 }: TranscriptionPanelProps) {
+  const isIntake = appointmentType ? INTAKE_TYPES.includes(appointmentType.toLowerCase()) : false;
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [interimSegment, setInterimSegment] = useState<TranscriptSegment | null>(null);
   const [connected, setConnected] = useState(false);
@@ -128,17 +133,16 @@ export function TranscriptionPanel({
   }, [displaySegments, displayInterim]);
 
   const handleGenerateNote = useCallback(async () => {
-    console.log(`[TranscriptionPanel] Generate note for session ${sessionId}`);
+    console.log(`[TranscriptionPanel] Generate ${isIntake ? 'intake' : 'note'} for session ${sessionId}`);
     if (!stopped) {
       await onStop();
     }
-    submitIntent(
-      'Generate a progress note from the session transcript',
-      patientId,
-      { transcriptionSessionId: sessionId }
-    );
+    const intentText = isIntake
+      ? 'Generate an intake assessment from the session transcript'
+      : 'Generate a progress note from the session transcript';
+    submitIntent(intentText, patientId, { transcriptionSessionId: sessionId });
     onClose();
-  }, [sessionId, patientId, submitIntent, stopped, onStop, onClose]);
+  }, [sessionId, patientId, submitIntent, stopped, onStop, onClose, isIntake]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -210,7 +214,7 @@ export function TranscriptionPanel({
             </p>
             {onLoadDemo && (
               <button
-                onClick={onLoadDemo}
+                onClick={() => onLoadDemo(isIntake ? 'intake' : 'progress')}
                 className="mt-4 flex items-center gap-1.5 rounded-[var(--radius-md)] px-3 py-1.5 text-caption font-medium transition-colors"
                 style={{
                   border: '1px solid var(--color-separator)',
@@ -256,7 +260,7 @@ export function TranscriptionPanel({
           style={{ background: 'var(--color-accent)' }}
         >
           <FileText size={16} />
-          Generate Note
+          {isIntake ? 'Generate Intake' : 'Generate Note'}
         </button>
       </div>
     </motion.div>

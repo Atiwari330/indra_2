@@ -149,6 +149,9 @@ export function useAgent() {
 
       try {
         const run = await serviceRef.current.submitIntent(input, patientId, options);
+        if (options?.evidence) {
+          run.evidence = options.evidence;
+        }
         dispatch({ type: 'SET_RUN', run });
 
         // Only poll if the returned status is non-terminal (mock returns pending)

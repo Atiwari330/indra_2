@@ -3,15 +3,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, ArrowUp } from 'lucide-react';
 import { useAgentContext } from './agent-provider';
+import type { EvidenceItem } from '@/lib/types/ai-agent';
 
 interface AIInputBarProps {
   patientName: string;
   patientId: string;
+  evidence?: EvidenceItem[];
 }
 
 const MAX_HEIGHT = 160; // ~6 lines
 
-export function AIInputBar({ patientName, patientId }: AIInputBarProps) {
+export function AIInputBar({ patientName, patientId, evidence }: AIInputBarProps) {
   const { submitIntent } = useAgentContext();
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -27,7 +29,7 @@ export function AIInputBar({ patientName, patientId }: AIInputBarProps) {
   function handleSubmit() {
     const trimmed = input.trim();
     if (!trimmed) return;
-    submitIntent(trimmed, patientId);
+    submitIntent(trimmed, patientId, evidence ? { evidence } : undefined);
     setInput('');
   }
 

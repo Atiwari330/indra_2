@@ -138,6 +138,183 @@ const DEMO_SEGMENTS: TranscriptSegment[] = [
   },
 ];
 
+const DEMO_INTAKE_SEGMENTS: TranscriptSegment[] = [
+  {
+    speaker: 'clinician',
+    text: "Hi Marcus, I'm Sarah Chen. Welcome. I know filling out all that paperwork isn't the most fun, so I appreciate your patience. Before we dive in, how are you feeling about being here today?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "Honestly, a little nervous. I've never done therapy before. But things have gotten to a point where I know I need to talk to someone.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That takes courage, and I'm glad you're here. Can you tell me what's been going on that brought you in?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "It's mainly anxiety and feeling down. The anxiety has been there for a while — maybe a year or so — but the last three months it's gotten really bad. I'm constantly worried about work, about money, about whether people think I'm doing a good job. And then the depression kind of crept in on top of that.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That sounds really overwhelming. When you say the anxiety got worse three months ago, did something change around that time?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "Yeah, I got promoted at work. Which sounds like it should be a good thing, right? But now I'm managing a team and I have no idea what I'm doing. I keep thinking they're going to figure out I'm not qualified and fire me.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "So the increased responsibility triggered a lot of self-doubt. How is the anxiety showing up day to day? Are there physical symptoms?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "Definitely. My heart races, especially before meetings. I get tension headaches almost every day. My stomach is a mess — I've lost about ten pounds in the last two months because I can't eat when I'm stressed. And I'm not sleeping well. I lie awake running through everything that could go wrong the next day.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "And the low mood — can you describe what that's like for you?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "It's like... I used to enjoy things. I used to play basketball on weekends, hang out with friends, play video games. Now I just come home and sit on the couch. I don't have the energy for anything. Some days I feel like what's the point of even trying.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "When you say 'what's the point,' I want to ask directly — have you had any thoughts of hurting yourself or not wanting to be alive?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "No, not like that. I've never thought about hurting myself. It's more like... I just feel stuck and hopeless sometimes. But I want to get better — that's why I'm here.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "Thank you for being honest about that. I'm glad you're not having those thoughts, and I'm glad you're taking this step. Have you ever seen a therapist or psychiatrist before?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "No, this is my first time. I thought about it in college when I was stressed about exams, but I never went through with it. No medications either.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "Got it. And have you ever been hospitalized for any psychiatric reasons?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "No, nothing like that.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "Let me ask about your family. Any history of mental health conditions — depression, anxiety, bipolar, substance use?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "My mom has been on antidepressants for as long as I can remember. She was diagnosed with major depression in her thirties. My dad — I don't think he was ever diagnosed with anything, but he definitely self-medicates with alcohol. My older sister has anxiety too, she takes something for it.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That's helpful to know — there's a clear family pattern there. Tell me about your living situation. Are you married, do you have roommates?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "I live with my girlfriend, Keisha. We've been together three years. She's actually the one who pushed me to come here. She says I've changed — that I'm irritable and distant. I know she's right.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "It sounds like she's a good support. What about substance use — alcohol, marijuana, anything else?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "I drink socially, maybe two or three beers on a weekend. Lately I've been having a drink after work to take the edge off, so maybe four or five nights a week. No marijuana or anything else.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That increase in drinking is something we should keep an eye on. It's common to reach for alcohol when anxiety is high, but it can actually make both the anxiety and depression worse over time. Are you taking any medications at all currently?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "Just ibuprofen for the headaches. Nothing prescribed.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "Okay. Based on everything you've shared, it sounds like you're dealing with generalized anxiety that's gotten significantly worse with the work transition, along with a depressive episode. I'd like to start meeting weekly. I think cognitive behavioral therapy would be a really good fit — it's evidence-based for both anxiety and depression, and it focuses on the kinds of thought patterns you described, like the imposter feelings and catastrophizing.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "That sounds good. Weekly works for me. I just want to feel like myself again.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That's a great goal, and I think we can get you there. I'm also going to recommend a psychiatry referral for a medication evaluation — given the severity of your symptoms and the family history, a combination of therapy and medication tends to have the best outcomes. How do you feel about that?",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'patient',
+    text: "I'm open to it. If my mom's medication helps her, maybe it'll help me too. I just want to make sure it won't make me feel like a zombie or anything.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+  {
+    speaker: 'clinician',
+    text: "That's a valid concern, and a good thing to discuss with the psychiatrist. The newer medications are generally well-tolerated. I'll put in that referral and we'll get you scheduled. For now, before our next session, I'd like you to start noticing when those anxious thoughts come up — don't try to change them yet, just notice them. We'll work on the tools next time.",
+    is_final: true,
+    timestamp: new Date().toISOString(),
+  },
+];
+
 interface DemoTranscriptionState {
   isActive: boolean;
   sessionId: string | null;
@@ -400,9 +577,10 @@ export function useDemoTranscription() {
     });
   }, []);
 
-  const loadDemoSegments = useCallback(async () => {
-    segmentsRef.current = DEMO_SEGMENTS;
-    setState(prev => ({ ...prev, segments: DEMO_SEGMENTS }));
+  const loadDemoSegments = useCallback(async (type?: 'progress' | 'intake') => {
+    const segments = type === 'intake' ? DEMO_INTAKE_SEGMENTS : DEMO_SEGMENTS;
+    segmentsRef.current = segments;
+    setState(prev => ({ ...prev, segments }));
     await stopSession();
   }, [stopSession]);
 

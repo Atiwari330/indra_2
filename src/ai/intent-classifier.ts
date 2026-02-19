@@ -13,6 +13,7 @@ export async function classifyIntent(text: string): Promise<IntentClassification
 - update_medication: The clinician wants to change a patient's medication
 - generate_utilization_review: The clinician wants to generate a utilization review or authorization request for a patient
 - create_treatment_plan: The clinician wants to create a treatment plan for a patient
+- create_intake_assessment: The clinician wants to create an intake assessment, initial evaluation, or biopsychosocial for a patient
 - general_query: General question or unclear intent
 
 Also extract the patient name if mentioned, and the encounter date if mentioned.

@@ -13,6 +13,7 @@ export type IntentInput = z.infer<typeof IntentInput>;
 export const IntentClassification = z.object({
   intent_type: z.enum([
     'create_progress_note',
+    'create_intake_assessment',
     'schedule_appointment',
     'query_patient_info',
     'update_medication',

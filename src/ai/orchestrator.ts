@@ -7,6 +7,7 @@ import { createFindPatientTool } from './tools/find-patient';
 import { createGetPatientContextTool } from './tools/get-patient-context';
 import { createResolveEncounterTool } from './tools/resolve-encounter';
 import { createProgressNoteTool } from './tools/create-progress-note';
+import { createIntakeNoteTool } from './tools/create-intake-note';
 import { createAppointmentTool } from './tools/create-appointment';
 import { createSuggestBillingCodesTool } from './tools/suggest-billing-codes';
 import { createUpdateMedicationTool } from './tools/update-medication';
@@ -54,6 +55,7 @@ export async function runOrchestrator(
     get_patient_context: createGetPatientContextTool(client, orgId),
     resolve_encounter: createResolveEncounterTool(client, orgId, providerId),
     create_progress_note: createProgressNoteTool(runId),
+    create_intake_note: createIntakeNoteTool(runId),
     create_appointment: createAppointmentTool(client, orgId, providerId),
     suggest_billing_codes: createSuggestBillingCodesTool(client, orgId),
     update_medication: createUpdateMedicationTool(),
@@ -66,7 +68,7 @@ export async function runOrchestrator(
   type AllTools = typeof allTools;
 
   const lookupToolNames = ['find_patient', 'get_patient_context', 'resolve_encounter'] as const;
-  const actionToolNames = ['create_progress_note', 'create_appointment', 'suggest_billing_codes', 'update_medication', 'generate_utilization_review', 'create_treatment_plan'] as const;
+  const actionToolNames = ['create_progress_note', 'create_intake_note', 'create_appointment', 'suggest_billing_codes', 'update_medication', 'generate_utilization_review', 'create_treatment_plan'] as const;
   const terminalToolNames = ['ask_clarification', 'submit_results'] as const;
 
   const systemPrompt = buildSystemPrompt(systemPromptContext);

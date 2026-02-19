@@ -6,6 +6,7 @@ import { FileText, Pill, CalendarPlus, Receipt, Stethoscope, ClipboardList, Targ
 import type { ProposedAction } from '@/lib/types/ai-agent';
 import { smooth } from '@/lib/animations';
 import { SOAPNoteContent } from '@/components/notes/soap-note-content';
+import { IntakeNoteContent } from '@/components/notes/intake-note-content';
 
 const ACTION_ICONS: Record<string, typeof FileText> = {
   encounter: Stethoscope,
@@ -361,10 +362,17 @@ export function ActionCard({ action }: ActionCardProps) {
                     className="mt-2 rounded-[var(--radius-sm)] p-3"
                     style={{ background: 'var(--color-bg-tertiary)' }}
                   >
-                    <SOAPNoteContent
-                      content={action.payload.content as Record<string, string>}
-                      compact
-                    />
+                    {action.payload.note_type === 'intake' ? (
+                      <IntakeNoteContent
+                        content={action.payload.content as Record<string, string>}
+                        compact
+                      />
+                    ) : (
+                      <SOAPNoteContent
+                        content={action.payload.content as Record<string, string>}
+                        compact
+                      />
+                    )}
                   </div>
                 ) : action.actionType === 'billing' && action.payload ? (
                   <div

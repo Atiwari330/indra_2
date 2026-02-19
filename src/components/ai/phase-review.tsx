@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import type { AgentRun } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
 import { ActionCard } from './action-card';
+import { EvidenceChips } from './evidence-chips';
 import { Markdown } from '@/components/ui/markdown';
 import { smooth } from '@/lib/animations';
 
@@ -22,6 +23,9 @@ export function PhaseReview({ run }: PhaseReviewProps) {
           <Markdown text={run.summary} />
         </div>
       )}
+
+      {/* Evidence chips */}
+      <EvidenceChips items={run.evidence} />
 
       {/* Action cards */}
       <div className="flex-1 space-y-3">

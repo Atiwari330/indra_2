@@ -45,11 +45,20 @@ export interface AgentRun {
   summary?: string;
   error?: string;
   tokenUsage?: { input: number; output: number };
+  evidence?: EvidenceItem[];
+}
+
+// Evidence/context chip for review phase
+export interface EvidenceItem {
+  id: string;
+  label: string;
+  category: 'patient' | 'transcript' | 'note' | 'treatment_plan' | 'medication' | 'diagnosis' | 'encounter';
 }
 
 // Options for submitting an intent
 export interface SubmitIntentOptions {
   transcriptionSessionId?: string;
+  evidence?: EvidenceItem[];
 }
 
 // Service interface — both mock and real implement this

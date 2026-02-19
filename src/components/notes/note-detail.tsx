@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, FileSignature, Loader2 } from 'lucide-react';
 import { slideOver, backdropFade } from '@/lib/animations';
 import { SOAPNoteContent } from './soap-note-content';
+import { IntakeNoteContent } from './intake-note-content';
 
 interface NoteData {
   id: string;
@@ -107,7 +108,7 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <h2 className="text-headline" style={{ color: 'var(--color-text-primary)' }}>
-                    {note?.note_type ?? 'SOAP'} Note
+                    {note?.note_type === 'intake' ? 'Intake Assessment' : `${note?.note_type ?? 'SOAP'} Note`}
                   </h2>
                   {note && (
                     <span
@@ -162,7 +163,9 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
               )}
 
               {note && !loading && (
-                <SOAPNoteContent content={note.content} />
+                note.note_type === 'intake'
+                  ? <IntakeNoteContent content={note.content} />
+                  : <SOAPNoteContent content={note.content} />
               )}
             </div>
 
