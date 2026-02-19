@@ -6,6 +6,7 @@ import type {
   ProposedAction,
   Clarification,
   SubmitIntentOptions,
+  NoteEditResult,
 } from '@/lib/types/ai-agent';
 
 // ── Mapping helpers ────────────────────────────────────────────
@@ -280,6 +281,29 @@ export function createRealAIService(): AIAgentService {
 
       // Fetch final state
       return this.getRunStatus(runId);
+    },
+
+    async editNote(
+      content: Record<string, unknown>,
+      noteType: string,
+      instruction: string
+    ): Promise<NoteEditResult> {
+      return apiFetch<NoteEditResult>('/api/ai/note-edit', {
+        method: 'POST',
+        body: JSON.stringify({ content, note_type: noteType, instruction }),
+        timeoutMs: 30_000,
+      });
+    },
+
+    async updateActionPayload(
+      runId: string,
+      actionId: string,
+      payload: Record<string, unknown>
+    ): Promise<void> {
+      await apiFetch(`/api/ai/runs/${runId}/actions/${actionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ provider_modified_payload: payload }),
+      });
     },
   };
 }

@@ -9,11 +9,16 @@ interface AgentContextValue {
   currentPhase: Phase;
   isCommandBarOpen: boolean;
   isSlideOverOpen: boolean;
+  isEditing: boolean;
+  editError: string | null;
+  editHistory: Record<string, Record<string, unknown>[]>;
   openCommandBar: () => void;
   closeCommandBar: () => void;
   submitIntent: (input: string, patientId?: string, options?: SubmitIntentOptions) => Promise<void>;
   respondToClarification: (answers: Record<string, string>) => Promise<void>;
   commitActions: () => Promise<void>;
+  editAction: (actionId: string, instruction: string) => Promise<void>;
+  undoEdit: (actionId: string) => Promise<void>;
   dismiss: () => void;
 }
 

@@ -6,6 +6,7 @@ import type { AgentRun, ProposedAction } from '@/lib/types/ai-agent';
 import { useAgentContext } from './agent-provider';
 import { ActionCard, BillingContent, URContent, TreatmentPlanContent } from './action-card';
 import { EvidenceChips } from './evidence-chips';
+import { NoteEditBar } from './note-edit-bar';
 import { Markdown } from '@/components/ui/markdown';
 import { SOAPNoteContent } from '@/components/notes/soap-note-content';
 import { IntakeNoteContent } from '@/components/notes/intake-note-content';
@@ -61,7 +62,7 @@ function ActionPreview({ action }: { action: ProposedAction }) {
 }
 
 export function PhaseReview({ run }: PhaseReviewProps) {
-  const { commitActions, dismiss } = useAgentContext();
+  const { commitActions, dismiss, editAction, undoEdit, isEditing, editError, editHistory } = useAgentContext();
 
   // Auto-select the primary note action, or first action
   const primaryIndex = run.proposedActions.findIndex(
@@ -71,6 +72,8 @@ export function PhaseReview({ run }: PhaseReviewProps) {
   const [selectedActionId, setSelectedActionId] = useState<string | undefined>(defaultId);
 
   const selectedAction = run.proposedActions.find((a) => a.id === selectedActionId);
+  const isNoteAction = selectedAction?.actionType === 'note';
+  const hasHistory = selectedActionId ? (editHistory[selectedActionId]?.length ?? 0) > 0 : false;
 
   return (
     <div className="flex h-full flex-col">
@@ -121,21 +124,25 @@ export function PhaseReview({ run }: PhaseReviewProps) {
           >
             <button
               onClick={dismiss}
+              disabled={isEditing}
               className="flex-1 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-medium transition-colors"
               style={{
                 background: 'var(--color-bg-tertiary)',
                 color: 'var(--color-text-primary)',
                 border: '1px solid var(--color-border)',
+                opacity: isEditing ? 0.5 : 1,
               }}
             >
               Reject
             </button>
             <button
               onClick={commitActions}
+              disabled={isEditing}
               className="flex-1 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-medium transition-colors"
               style={{
                 background: 'var(--color-accent)',
                 color: '#fff',
+                opacity: isEditing ? 0.5 : 1,
               }}
             >
               Approve &amp; Save
@@ -146,7 +153,7 @@ export function PhaseReview({ run }: PhaseReviewProps) {
         {/* Right column — document preview (hidden below 900px) */}
         <div className="hidden min-[900px]:flex flex-1 flex-col overflow-y-auto">
           {selectedAction ? (
-            <div className="mx-auto w-full max-w-3xl px-8 py-6">
+            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-8 py-6">
               {/* Note type badge */}
               <p className="text-overline mb-1">
                 {selectedAction.actionType.replace('_', ' ')}
@@ -165,13 +172,41 @@ export function PhaseReview({ run }: PhaseReviewProps) {
                 }}
               />
 
-              {/* Full document content */}
-              <ActionPreview action={selectedAction} />
+              {/* Full document content with editing overlay */}
+              <div className="relative flex-1">
+                <div style={{ opacity: isEditing ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                  <ActionPreview action={selectedAction} />
+                </div>
+                {isEditing && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    <p className="text-callout" style={{ color: 'var(--color-text-secondary)' }}>
+                      Applying edit...
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Note edit bar — only for note actions */}
+              {isNoteAction && selectedActionId && (
+                <div className="mt-6 sticky bottom-0 pb-2">
+                  <NoteEditBar
+                    actionId={selectedActionId}
+                    isEditing={isEditing}
+                    hasHistory={hasHistory}
+                    editError={editError}
+                    onEdit={editAction}
+                    onUndo={undoEdit}
+                  />
+                </div>
+              )}
 
               {/* Token usage */}
               {run.tokenUsage && (
                 <p
-                  className="mt-8 text-caption"
+                  className="mt-4 text-caption"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
                   Tokens: {run.tokenUsage.input.toLocaleString()} in /{' '}

@@ -61,10 +61,18 @@ export interface SubmitIntentOptions {
   evidence?: EvidenceItem[];
 }
 
+// Result from an AI note edit
+export interface NoteEditResult {
+  content: Record<string, unknown>;
+  changesSummary: string;
+}
+
 // Service interface — both mock and real implement this
 export interface AIAgentService {
   submitIntent(input: string, patientId?: string, options?: SubmitIntentOptions): Promise<AgentRun>;
   getRunStatus(runId: string): Promise<AgentRun>;
   respondToClarification(runId: string, answers: Record<string, string>): Promise<AgentRun>;
   commitActions(runId: string): Promise<AgentRun>;
+  editNote(content: Record<string, unknown>, noteType: string, instruction: string): Promise<NoteEditResult>;
+  updateActionPayload(runId: string, actionId: string, payload: Record<string, unknown>): Promise<void>;
 }

@@ -10,12 +10,18 @@ export interface AgentState {
   run: AgentRun | null;
   isCommandBarOpen: boolean;
   isSlideOverOpen: boolean;
+  isEditing: boolean;
+  editError: string | null;
+  editHistory: Record<string, Record<string, unknown>[]>; // actionId → stack of previous payloads
 }
 
 const initialState: AgentState = {
   run: null,
   isCommandBarOpen: false,
   isSlideOverOpen: false,
+  isEditing: false,
+  editError: null,
+  editHistory: {},
 };
 
 // ── Actions ─────────────────────────────────────────────────────
@@ -26,7 +32,11 @@ type AgentAction =
   | { type: 'OPEN_SLIDE_OVER' }
   | { type: 'CLOSE_SLIDE_OVER' }
   | { type: 'SET_RUN'; run: AgentRun }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'START_EDIT' }
+  | { type: 'FINISH_EDIT'; actionId: string; newPayload: Record<string, unknown>; previousPayload: Record<string, unknown> }
+  | { type: 'UNDO_EDIT'; actionId: string; previousPayload: Record<string, unknown> }
+  | { type: 'EDIT_FAILED'; error: string };
 
 function reducer(state: AgentState, action: AgentAction): AgentState {
   switch (action.type) {
@@ -41,7 +51,44 @@ function reducer(state: AgentState, action: AgentAction): AgentState {
     case 'SET_RUN':
       return { ...state, run: action.run };
     case 'RESET':
-      return { ...state, run: null, isSlideOverOpen: false };
+      return { ...initialState };
+    case 'START_EDIT':
+      return { ...state, isEditing: true, editError: null };
+    case 'FINISH_EDIT': {
+      if (!state.run) return { ...state, isEditing: false };
+      const updatedActions = state.run.proposedActions.map((a) =>
+        a.id === action.actionId ? { ...a, payload: action.newPayload } : a
+      );
+      const prevStack = state.editHistory[action.actionId] ?? [];
+      return {
+        ...state,
+        isEditing: false,
+        editError: null,
+        run: { ...state.run, proposedActions: updatedActions },
+        editHistory: {
+          ...state.editHistory,
+          [action.actionId]: [...prevStack, action.previousPayload],
+        },
+      };
+    }
+    case 'UNDO_EDIT': {
+      if (!state.run) return state;
+      const updatedActions = state.run.proposedActions.map((a) =>
+        a.id === action.actionId ? { ...a, payload: action.previousPayload } : a
+      );
+      const stack = [...(state.editHistory[action.actionId] ?? [])];
+      stack.pop(); // remove the entry we just restored
+      return {
+        ...state,
+        run: { ...state.run, proposedActions: updatedActions },
+        editHistory: {
+          ...state.editHistory,
+          [action.actionId]: stack,
+        },
+      };
+    }
+    case 'EDIT_FAILED':
+      return { ...state, isEditing: false, editError: action.error };
     default:
       return state;
   }
@@ -225,6 +272,62 @@ export function useAgent() {
     }
   }, [state.run]);
 
+  const editAction = useCallback(
+    async (actionId: string, instruction: string) => {
+      if (!state.run) return;
+
+      const action = state.run.proposedActions.find((a) => a.id === actionId);
+      if (!action) return;
+
+      dispatch({ type: 'START_EDIT' });
+
+      try {
+        const noteType = (action.payload.note_type as string) ?? 'soap';
+        const content = (action.payload.content as Record<string, unknown>) ?? action.payload;
+
+        const result = await serviceRef.current.editNote(content, noteType, instruction);
+
+        // Build the new full payload (preserve non-content fields like note_type)
+        const newPayload = { ...action.payload, content: result.content };
+
+        // Persist to backend
+        await serviceRef.current.updateActionPayload(state.run.id, actionId, newPayload);
+
+        dispatch({
+          type: 'FINISH_EDIT',
+          actionId,
+          newPayload,
+          previousPayload: action.payload,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Edit failed';
+        dispatch({ type: 'EDIT_FAILED', error: message });
+      }
+    },
+    [state.run]
+  );
+
+  const undoEdit = useCallback(
+    async (actionId: string) => {
+      if (!state.run) return;
+
+      const stack = state.editHistory[actionId];
+      if (!stack || stack.length === 0) return;
+
+      const previousPayload = stack[stack.length - 1];
+
+      try {
+        // Persist the undo to backend
+        await serviceRef.current.updateActionPayload(state.run.id, actionId, previousPayload);
+        dispatch({ type: 'UNDO_EDIT', actionId, previousPayload });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Undo failed';
+        dispatch({ type: 'EDIT_FAILED', error: message });
+      }
+    },
+    [state.run, state.editHistory]
+  );
+
   const dismiss = useCallback(() => {
     stopPolling();
     dispatch({ type: 'CLOSE_SLIDE_OVER' });
@@ -243,6 +346,8 @@ export function useAgent() {
     submitIntent,
     respondToClarification,
     commitActions,
+    editAction,
+    undoEdit,
     dismiss,
   };
 }

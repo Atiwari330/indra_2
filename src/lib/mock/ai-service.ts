@@ -1,4 +1,4 @@
-import type { AIAgentService, AgentRun, ProcessingStep } from '@/lib/types/ai-agent';
+import type { AIAgentService, AgentRun, ProcessingStep, NoteEditResult } from '@/lib/types/ai-agent';
 import { matchScenario, type MockScenario } from './scenarios';
 
 interface InternalRun {
@@ -176,6 +176,26 @@ export function createMockAIService(): AIAgentService {
       internal.run.status = 'committed';
 
       return { ...internal.run };
+    },
+
+    async editNote(
+      content: Record<string, unknown>,
+      _noteType: string,
+      instruction: string
+    ): Promise<NoteEditResult> {
+      await sleep(1500);
+      return {
+        content,
+        changesSummary: `Applied edit: ${instruction}`,
+      };
+    },
+
+    async updateActionPayload(
+      _runId: string,
+      _actionId: string,
+      _payload: Record<string, unknown>
+    ): Promise<void> {
+      // No-op in mock mode
     },
   };
 }
