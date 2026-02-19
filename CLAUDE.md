@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Indra is an AI-native EHR for outpatient behavioral health. It's a Next.js 16 backend (API routes) + Supabase + Vercel AI SDK v6 application. The AI agent orchestrates clinical workflows — it proposes actions (note drafts, billing, appointments, medication changes) that providers review before committing to the clinical record.
+Indra is an AI-native EHR for outpatient behavioral health. Next.js 16 + Supabase + Vercel AI SDK v6. Two apps in one repo:
+
+- **Provider app** (`src/app/(app)/`) — Clinical workflows, AI agent, note generation, billing
+- **Patient portal** (`src/app/portal/`) — Patient-facing: appointments, mood tracking, wellness, breathing tools (separate theme via `.portal-theme` CSS class)
+
+The AI agent orchestrates clinical workflows — it proposes actions (note drafts, billing, appointments, medication changes) that providers review before committing to the clinical record.
 
 ## Commands
 
@@ -16,6 +21,7 @@ npm run test             # Vitest watch mode
 npm run test:run         # Vitest single run (CI)
 npm run db:push          # Push Supabase migrations
 npm run db:types         # Regenerate TypeScript types from Supabase schema
+npm run ws:dev           # WebSocket server for transcription (port 3001, separate process)
 
 # Testing scripts (use dotenv with .env.local, not .env)
 npx tsx scripts/run-intent.ts "Write a progress note for John Doe"  # Interactive AI intent testing
@@ -91,6 +97,47 @@ User prompt ("Write a note for John Doe")
 - `src/lib/types/database.ts` — Auto-generated from Supabase (regenerate with `npm run db:types`)
 - `supabase/migrations/` — Sequential migrations (platform → clinical → billing → AI → audit → RLS → seed)
 
+### Frontend: Provider Hierarchy & Agent State
+
+```
+RootLayout (Geist fonts)
+  → AppShell (src/components/shell/app-shell.tsx)
+    → SidebarProvider
+      → AgentProvider (src/components/ai/agent-provider.tsx)
+        → ShellInner (sidebar + topbar + content)
+```
+
+Agent UI lifecycle is driven by `useAgent()` hook (`src/lib/hooks/use-agent.ts`):
+- Reducer-based state with polling loop (800ms) for non-terminal statuses
+- Synthetic step UI shown during blocking API calls (user sees progress immediately)
+- Phase derivation: status → `processing | clarification | review | success | error`
+- Edit history stack with undo support for note modifications before commit
+- Agent phases render as: `PhaseProcessing` → `PhaseClarification` → `PhaseReview` → `PhaseSuccess`
+
+### Mock vs Real AI Service
+
+Controlled by `NEXT_PUBLIC_USE_MOCK_AI` (defaults to mock when not `'false'`):
+
+- **Factory**: `src/services/ai-agent.service.ts` → `getAIAgentService()` returns mock or real
+- **Mock**: `src/lib/mock/ai-service.ts` + `src/lib/mock/scenarios.ts` — in-memory state machine with timer-based step progression, keyword-matched scenarios
+- **Real**: `src/services/ai-agent.real.ts` — HTTP calls to `/api/ai/*` endpoints with response mapping
+
+Both implement `AIAgentService` interface (`src/lib/types/ai-agent.ts`).
+
+### WebSocket Transcription Server
+
+`src/server/ws-server.ts` runs on port 3001 (separate from Next.js). Chrome extension streams PCM audio → Deepgram STT → transcripts stored in DB. Session-based with `sessionId` validation.
+
+### Design System
+
+CSS custom properties in `src/app/globals.css` — liquid glass aesthetic. Key tokens:
+- Colors: `--color-accent` (#007aff), `--color-bg-primary/secondary/tertiary`, `--color-text-*`, `--color-separator`
+- Typography scale: `text-large-title` through `text-caption` (classes)
+- Layout: `--sidebar-width-expanded: 260px`, `--topbar-height: 56px`
+- Portal theme overrides via `.portal-theme` class (earthy palette, #5B9A8B accent)
+
+Animation presets in `src/lib/animations.ts`: `snappy`, `smooth`, `gentle`, `bouncy` springs + named variants (`slideOver`, `canvasReveal`, `phaseTransition`, etc.). Uses `motion` from `motion/react` (Framer Motion v12).
+
 ## SDK & Library Gotchas
 
 ### Vercel AI SDK v6 (NOT v5)
@@ -145,3 +192,17 @@ UUID hex digits only go up to `f` — never use characters like `g` in seed UUID
 - Clinical tables have audit triggers capturing all mutations to `audit_log` (append-only, UPDATE/DELETE revoked)
 - `clinical_notes` uses `version` + `is_current` + `previous_version_id` for append-only versioning
 - Enums are Postgres-level (e.g., `ai_run_status`, `encounter_type`, `note_status`) — update via migration
+
+## Environment Variables
+
+See `.env.example` for the full list. Secrets go in `.env.local` (not committed). Key variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `SKIP_AUTH` | `true` in dev — uses seed data identities instead of JWT |
+| `NEXT_PUBLIC_USE_MOCK_AI` | Defaults to mock; set to `'false'` for real AI |
+| `AI_SKIP_CLARIFICATIONS` | Skip AI clarification questions during dev |
+| `AI_GATEWAY_API_KEY` | Vercel AI Gateway key (routes to Gemini) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin client key (bypasses RLS) |
+
+Scripts load `.env.local` via `dotenv` explicitly — Next.js auto-loads it for server routes but not for standalone scripts.
