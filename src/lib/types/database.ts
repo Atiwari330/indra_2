@@ -363,6 +363,79 @@ export type Database = {
           },
         ]
       }
+      assessment_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          measure_type: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id: string
+          patient_id: string
+          provider_id: string
+          provider_viewed_at: string | null
+          requested_at: string
+          responses: Json | null
+          severity: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["assessment_request_status"]
+          total_score: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          measure_type: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id: string
+          patient_id: string
+          provider_id: string
+          provider_viewed_at?: string | null
+          requested_at?: string
+          responses?: Json | null
+          severity?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["assessment_request_status"]
+          total_score?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          measure_type?: Database["public"]["Enums"]["assessment_measure_type"]
+          org_id?: string
+          patient_id?: string
+          provider_id?: string
+          provider_viewed_at?: string | null
+          requested_at?: string
+          responses?: Json | null
+          severity?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["assessment_request_status"]
+          total_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_scores: {
         Row: {
           administered_at: string
@@ -1174,6 +1247,9 @@ export type Database = {
       }
       patient_diagnoses: {
         Row: {
+          ai_run_id: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           description: string
           diagnosed_by: string | null
@@ -1187,6 +1263,9 @@ export type Database = {
           status: Database["public"]["Enums"]["diagnosis_status"]
         }
         Insert: {
+          ai_run_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           description: string
           diagnosed_by?: string | null
@@ -1200,6 +1279,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["diagnosis_status"]
         }
         Update: {
+          ai_run_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           description?: string
           diagnosed_by?: string | null
@@ -1213,6 +1295,20 @@ export type Database = {
           status?: Database["public"]["Enums"]["diagnosis_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "patient_diagnoses_ai_run_id_fkey"
+            columns: ["ai_run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_diagnoses_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "patient_diagnoses_diagnosed_by_fkey"
             columns: ["diagnosed_by"]
@@ -1994,6 +2090,11 @@ export type Database = {
       ai_step_type: "llm_call" | "tool_call" | "tool_result" | "error"
       appointment_status: "scheduled" | "completed" | "cancelled" | "no_show"
       assessment_measure_type: "PHQ-9" | "GAD-7" | "PCL-5" | "AUDIT-C" | "CSSRS"
+      assessment_request_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "expired"
       assessment_score_source: "ai_tool" | "manual_entry" | "client_portal"
       claim_status:
         | "draft"
@@ -2004,7 +2105,7 @@ export type Database = {
         | "denied"
         | "paid"
         | "appealed"
-      diagnosis_status: "active" | "resolved" | "ruled_out"
+      diagnosis_status: "active" | "resolved" | "ruled_out" | "pending_review"
       encounter_status:
         | "scheduled"
         | "in_progress"
@@ -2188,6 +2289,12 @@ export const Constants = {
       ai_step_type: ["llm_call", "tool_call", "tool_result", "error"],
       appointment_status: ["scheduled", "completed", "cancelled", "no_show"],
       assessment_measure_type: ["PHQ-9", "GAD-7", "PCL-5", "AUDIT-C", "CSSRS"],
+      assessment_request_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "expired",
+      ],
       assessment_score_source: ["ai_tool", "manual_entry", "client_portal"],
       claim_status: [
         "draft",
@@ -2199,7 +2306,7 @@ export const Constants = {
         "paid",
         "appealed",
       ],
-      diagnosis_status: ["active", "resolved", "ruled_out"],
+      diagnosis_status: ["active", "resolved", "ruled_out", "pending_review"],
       encounter_status: [
         "scheduled",
         "in_progress",

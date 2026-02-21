@@ -27,7 +27,7 @@ export default async function PatientPage({ params }: Props) {
   }
 
   // Fetch related data in parallel
-  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes, intakeNoteRes, latestTranscriptionRes, milestonesRes, completedEncountersRes] = await Promise.all([
+  const [diagnosesRes, medicationsRes, notesRes, appointmentsRes, ursRes, treatmentPlanRes, intakeNoteRes, latestTranscriptionRes, milestonesRes, completedEncountersRes, assessmentRequestsRes] = await Promise.all([
     supabase
       .from('patient_diagnoses')
       .select('id, icd10_code, description, status, is_primary')
@@ -115,6 +115,13 @@ export default async function PatientPage({ params }: Props) {
       .eq('patient_id', id)
       .eq('org_id', DEV_ORG_ID)
       .eq('status', 'completed'),
+
+    supabase
+      .from('assessment_requests')
+      .select('id, measure_type, status, total_score, severity, requested_at, completed_at, responses')
+      .eq('patient_id', id)
+      .eq('org_id', DEV_ORG_ID)
+      .order('requested_at', { ascending: false }),
   ]);
 
   return (
@@ -142,6 +149,10 @@ export default async function PatientPage({ params }: Props) {
         completed_by: milestonesRes.data.completed_by,
       } : null}
       completedEncounterCount={completedEncountersRes.count ?? 0}
+      assessmentRequests={(assessmentRequestsRes?.data ?? []).map((r) => ({
+        ...r,
+        responses: r.responses as unknown as Array<{ question_index: number; answer_value: number }> | null,
+      }))}
     />
   );
 }

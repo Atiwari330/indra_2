@@ -25,6 +25,7 @@ import { NoteDetail } from '@/components/notes/note-detail';
 import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
 import { DiagnosisConfirmationPanel } from '@/components/clinical/diagnosis-confirmation-panel';
+import { AssessmentCard } from '@/components/clinical/assessment-card';
 import type { EvidenceItem } from '@/lib/types/ai-agent';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
@@ -93,6 +94,16 @@ interface PatientDetailProps {
     completed_by: string;
   } | null;
   completedEncounterCount: number;
+  assessmentRequests: {
+    id: string;
+    measure_type: string;
+    status: string;
+    total_score: number | null;
+    severity: string | null;
+    requested_at: string;
+    completed_at: string | null;
+    responses: Array<{ question_index: number; answer_value: number }> | null;
+  }[];
 }
 
 export function PatientDetail({
@@ -107,6 +118,7 @@ export function PatientDetail({
   treatmentPlan,
   consentMilestone,
   completedEncounterCount,
+  assessmentRequests,
 }: PatientDetailProps) {
   const { submitIntent } = useAgentContext();
   const router = useRouter();
@@ -580,6 +592,11 @@ export function PatientDetail({
                   ))}
                 </div>
               </InfoCard>
+            </motion.div>
+
+            {/* Assessments */}
+            <motion.div variants={cardItem}>
+              <AssessmentCard patientId={patient.id} patientFirstName={patient.first_name} />
             </motion.div>
 
             {/* Upcoming Appointments */}
