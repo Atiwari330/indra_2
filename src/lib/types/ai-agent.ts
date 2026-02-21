@@ -6,6 +6,7 @@ export type AgentStatus =
   | 'needs_clarification'
   | 'ready_to_commit'
   | 'committing'
+  | 'confirming_diagnoses'
   | 'committed'
   | 'failed';
 
@@ -24,10 +25,17 @@ export interface Clarification {
   answer?: string;
 }
 
+// A suggested diagnosis from AI intake assessment
+export interface SuggestedDiagnosis {
+  icd10_code: string;
+  description: string;
+  is_primary: boolean;
+}
+
 // A proposed action the AI wants to take
 export interface ProposedAction {
   id: string;
-  actionType: 'encounter' | 'note' | 'medication' | 'appointment' | 'billing' | 'utilization_review' | 'treatment_plan';
+  actionType: 'encounter' | 'note' | 'medication' | 'appointment' | 'billing' | 'utilization_review' | 'treatment_plan' | 'diagnosis';
   description: string;
   payload: Record<string, unknown>;
   assumptions?: string[];
@@ -46,6 +54,7 @@ export interface AgentRun {
   error?: string;
   tokenUsage?: { input: number; output: number };
   evidence?: EvidenceItem[];
+  suggestedDiagnoses?: SuggestedDiagnosis[];
 }
 
 // Evidence/context chip for review phase
@@ -75,4 +84,5 @@ export interface AIAgentService {
   commitActions(runId: string): Promise<AgentRun>;
   editNote(content: Record<string, unknown>, noteType: string, instruction: string): Promise<NoteEditResult>;
   updateActionPayload(runId: string, actionId: string, payload: Record<string, unknown>): Promise<void>;
+  confirmDiagnoses(runId: string, diagnoses: SuggestedDiagnosis[]): Promise<AgentRun>;
 }

@@ -1,4 +1,4 @@
-import type { AIAgentService, AgentRun, ProcessingStep, NoteEditResult } from '@/lib/types/ai-agent';
+import type { AIAgentService, AgentRun, ProcessingStep, NoteEditResult, SuggestedDiagnosis } from '@/lib/types/ai-agent';
 import { matchScenario, type MockScenario } from './scenarios';
 
 interface InternalRun {
@@ -173,6 +173,23 @@ export function createMockAIService(): AIAgentService {
 
       internal.run.status = 'committing';
       await sleep(800);
+
+      // If the scenario has suggested diagnoses, transition to diagnosis confirmation
+      if (internal.scenario.suggestedDiagnoses?.length) {
+        internal.run.status = 'confirming_diagnoses';
+        internal.run.suggestedDiagnoses = internal.scenario.suggestedDiagnoses;
+      } else {
+        internal.run.status = 'committed';
+      }
+
+      return { ...internal.run };
+    },
+
+    async confirmDiagnoses(runId: string, _diagnoses: SuggestedDiagnosis[]): Promise<AgentRun> {
+      const internal = runs.get(runId);
+      if (!internal) throw new Error(`Run ${runId} not found`);
+
+      await sleep(400);
       internal.run.status = 'committed';
 
       return { ...internal.run };

@@ -10,11 +10,13 @@ import { PhaseClarification } from './phase-clarification';
 import { PhaseReview } from './phase-review';
 import { PhaseSuccess } from './phase-success';
 import { PhaseError } from './phase-error';
+import { PhaseDiagnosisConfirmation } from './phase-diagnosis-confirmation';
 
 const PHASE_LABELS: Record<string, string> = {
   processing: 'Working',
   clarification: 'Needs input',
   review: 'Review',
+  diagnosis_confirmation: 'Confirm Diagnoses',
   success: 'Complete',
   error: 'Error',
 };
@@ -135,6 +137,19 @@ export function AgentCanvas() {
                     className="h-full"
                   >
                     <PhaseReview run={run} />
+                  </motion.div>
+                )}
+
+                {currentPhase === 'diagnosis_confirmation' && run && (
+                  <motion.div
+                    key="diagnosis_confirmation"
+                    variants={phaseTransition}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className="h-full"
+                  >
+                    <PhaseDiagnosisConfirmation run={run} />
                   </motion.div>
                 )}
 

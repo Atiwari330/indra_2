@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useCallback, useRef } from 'react';
-import type { AgentRun, AgentStatus, SubmitIntentOptions } from '@/lib/types/ai-agent';
+import type { AgentRun, AgentStatus, SubmitIntentOptions, SuggestedDiagnosis } from '@/lib/types/ai-agent';
 import { getAIAgentService } from '@/services/ai-agent.service';
 
 // ── State ───────────────────────────────────────────────────────
@@ -99,6 +99,7 @@ function reducer(state: AgentState, action: AgentAction): AgentState {
 const TERMINAL: AgentStatus[] = [
   'needs_clarification',
   'ready_to_commit',
+  'confirming_diagnoses',
   'committed',
   'failed',
 ];
@@ -335,6 +336,44 @@ export function useAgent() {
     setTimeout(() => dispatch({ type: 'RESET' }), 400);
   }, [stopPolling]);
 
+  const confirmDiagnoses = useCallback(async (diagnoses: SuggestedDiagnosis[]) => {
+    if (!state.run) return;
+    dispatch({ type: 'SET_RUN', run: { ...state.run, status: 'committing' } });
+    try {
+      // 1. Save to database via API
+      if (state.run.patientId) {
+        await fetch(`/api/patients/${state.run.patientId}/diagnoses`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ diagnoses, status: 'active', aiRunId: state.run.id }),
+        });
+      }
+      // 2. Transition agent state to committed
+      const updated = await serviceRef.current.confirmDiagnoses(state.run.id, diagnoses);
+      dispatch({ type: 'SET_RUN', run: updated });
+    } catch {
+      dispatch({
+        type: 'SET_RUN',
+        run: { ...state.run, status: 'failed', error: 'Failed to confirm diagnoses' },
+      });
+    }
+  }, [state.run]);
+
+  const deferDiagnoses = useCallback(async () => {
+    if (!state.run?.patientId || !state.run.suggestedDiagnoses) return;
+    // Save as pending_review so they appear on the profile
+    await fetch(`/api/patients/${state.run.patientId}/diagnoses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        diagnoses: state.run.suggestedDiagnoses,
+        status: 'pending_review',
+        aiRunId: state.run.id,
+      }),
+    });
+    dismiss();
+  }, [state.run, dismiss]);
+
   // Derive current phase from run status
   const currentPhase = derivePhase(state.run?.status ?? 'idle');
 
@@ -349,12 +388,14 @@ export function useAgent() {
     editAction,
     undoEdit,
     dismiss,
+    confirmDiagnoses,
+    deferDiagnoses,
   };
 }
 
 // ── Phase derivation ────────────────────────────────────────────
 
-export type Phase = 'processing' | 'clarification' | 'review' | 'success' | 'error' | null;
+export type Phase = 'processing' | 'clarification' | 'review' | 'diagnosis_confirmation' | 'success' | 'error' | null;
 
 function derivePhase(status: AgentStatus): Phase {
   switch (status) {
@@ -366,6 +407,8 @@ function derivePhase(status: AgentStatus): Phase {
       return 'clarification';
     case 'ready_to_commit':
       return 'review';
+    case 'confirming_diagnoses':
+      return 'diagnosis_confirmation';
     case 'committed':
       return 'success';
     case 'failed':

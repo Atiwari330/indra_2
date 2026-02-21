@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAgent, type Phase } from '@/lib/hooks/use-agent';
-import type { AgentRun, SubmitIntentOptions } from '@/lib/types/ai-agent';
+import type { AgentRun, SubmitIntentOptions, SuggestedDiagnosis } from '@/lib/types/ai-agent';
 
 interface AgentContextValue {
   run: AgentRun | null;
@@ -20,6 +20,8 @@ interface AgentContextValue {
   editAction: (actionId: string, instruction: string) => Promise<void>;
   undoEdit: (actionId: string) => Promise<void>;
   dismiss: () => void;
+  confirmDiagnoses: (diagnoses: SuggestedDiagnosis[]) => Promise<void>;
+  deferDiagnoses: () => Promise<void>;
 }
 
 const AgentContext = createContext<AgentContextValue | null>(null);

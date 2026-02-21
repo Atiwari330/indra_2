@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   ClipboardList,
   Target,
   Plus,
+  AlertCircle,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -22,6 +24,7 @@ import { useAgentContext } from '@/components/ai/agent-provider';
 import { NoteDetail } from '@/components/notes/note-detail';
 import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
+import { DiagnosisConfirmationPanel } from '@/components/clinical/diagnosis-confirmation-panel';
 import type { EvidenceItem } from '@/lib/types/ai-agent';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
@@ -106,9 +109,15 @@ export function PatientDetail({
   completedEncounterCount,
 }: PatientDetailProps) {
   const { submitIntent } = useAgentContext();
+  const router = useRouter();
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedURId, setSelectedURId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showDiagnosisConfirmation, setShowDiagnosisConfirmation] = useState(false);
+
+  // Split diagnoses into active and pending
+  const activeDiagnoses = useMemo(() => diagnoses.filter((d) => d.status === 'active'), [diagnoses]);
+  const pendingDiagnoses = useMemo(() => diagnoses.filter((d) => d.status === 'pending_review'), [diagnoses]);
   const [notes, setNotes] = useState(recentNotes);
   const pendingViewNoteRef = useRef(false);
   const pendingViewURRef = useRef(false);
@@ -179,8 +188,8 @@ export function PatientDetail({
 
   const evidence = useMemo<EvidenceItem[]>(() => {
     const items: EvidenceItem[] = [];
-    if (diagnoses.length > 0) {
-      items.push({ id: 'dx', label: `${diagnoses.length} diagnos${diagnoses.length === 1 ? 'is' : 'es'}`, category: 'diagnosis' });
+    if (activeDiagnoses.length > 0) {
+      items.push({ id: 'dx', label: `${activeDiagnoses.length} diagnos${activeDiagnoses.length === 1 ? 'is' : 'es'}`, category: 'diagnosis' });
     }
     if (medications.length > 0) {
       items.push({ id: 'meds', label: `${medications.length} medication${medications.length === 1 ? '' : 's'}`, category: 'medication' });
@@ -195,7 +204,7 @@ export function PatientDetail({
       items.push({ id: 'transcript', label: 'Session transcript', category: 'transcript' });
     }
     return items;
-  }, [diagnoses, medications, treatmentPlan, recentNotes, latestTranscriptionSessionId]);
+  }, [activeDiagnoses, medications, treatmentPlan, recentNotes, latestTranscriptionSessionId]);
 
   // ── Consent milestone toggle (optimistic) ──
   const [consentComplete, setConsentComplete] = useState(consentMilestone !== null);
@@ -225,7 +234,7 @@ export function PatientDetail({
     const completions = [
       consentComplete,
       hasIntakeNote,
-      diagnoses.length > 0,
+      activeDiagnoses.length > 0,
       treatmentPlan !== null,
       completedEncounterCount > 1 && notes.length > 0,
     ];
@@ -277,7 +286,10 @@ export function PatientDetail({
         label: 'Diagnosis',
         status: s3,
         subtitle: s3 === 'complete'
-          ? `${diagnoses.length} active diagnos${diagnoses.length === 1 ? 'is' : 'es'}`
+          ? `${activeDiagnoses.length} active diagnos${activeDiagnoses.length === 1 ? 'is' : 'es'}`
+          : undefined,
+        cta: pendingDiagnoses.length > 0
+          ? { label: 'Review Suggested Diagnoses', action: () => setShowDiagnosisConfirmation(true) }
           : undefined,
       },
       {
@@ -308,7 +320,7 @@ export function PatientDetail({
         },
       },
     ];
-  }, [consentComplete, hasIntakeNote, diagnoses, treatmentPlan, completedEncounterCount, notes, patient.id, latestTranscriptionSessionId, evidence, submitIntent, handleConsentToggle]);
+  }, [consentComplete, hasIntakeNote, activeDiagnoses, pendingDiagnoses, treatmentPlan, completedEncounterCount, notes, patient.id, latestTranscriptionSessionId, evidence, submitIntent, handleConsentToggle]);
 
   const allComplete = trackerSteps.every((s) => s.status === 'complete');
 
@@ -383,23 +395,56 @@ export function PatientDetail({
                 isEmpty={diagnoses.length === 0}
               >
                 <div className="space-y-2">
+                  {/* Pending review banner */}
+                  {pendingDiagnoses.length > 0 && (
+                    <button
+                      onClick={() => setShowDiagnosisConfirmation(true)}
+                      className="flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors hover:opacity-90"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
+                      }}
+                    >
+                      <AlertCircle size={14} strokeWidth={1.8} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                      <span className="text-caption" style={{ color: 'var(--color-warning)' }}>
+                        {pendingDiagnoses.length} diagnos{pendingDiagnoses.length === 1 ? 'is' : 'es'} awaiting confirmation
+                      </span>
+                    </button>
+                  )}
+
                   {diagnoses.map((d) => (
                     <div key={d.id} className="flex items-start gap-2">
                       <span
                         className="mt-0.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full"
                         style={{
-                          background: d.is_primary
+                          background: d.status === 'pending_review'
+                            ? 'var(--color-warning)'
+                            : d.is_primary
                             ? 'var(--color-accent)'
                             : 'var(--color-text-tertiary)',
                         }}
                       />
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
                           {d.description}
                         </p>
-                        <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
-                          {d.icd10_code}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
+                            {d.icd10_code}
+                          </p>
+                          {d.status === 'pending_review' && (
+                            <span
+                              className="rounded-full px-1.5 py-0.5 text-caption font-medium"
+                              style={{
+                                background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+                                color: 'var(--color-warning)',
+                                fontSize: '10px',
+                              }}
+                            >
+                              Pending Review
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -646,6 +691,18 @@ export function PatientDetail({
       <TreatmentPlanDetail
         planId={selectedPlanId}
         onClose={() => setSelectedPlanId(null)}
+      />
+
+      {/* Diagnosis Confirmation Panel */}
+      <DiagnosisConfirmationPanel
+        isOpen={showDiagnosisConfirmation}
+        onClose={() => setShowDiagnosisConfirmation(false)}
+        patientId={patient.id}
+        pendingDiagnoses={pendingDiagnoses}
+        onConfirmed={() => {
+          setShowDiagnosisConfirmation(false);
+          router.refresh();
+        }}
       />
     </div>
   );

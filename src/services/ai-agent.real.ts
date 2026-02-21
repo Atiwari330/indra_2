@@ -7,6 +7,7 @@ import type {
   Clarification,
   SubmitIntentOptions,
   NoteEditResult,
+  SuggestedDiagnosis,
 } from '@/lib/types/ai-agent';
 
 // ── Mapping helpers ────────────────────────────────────────────
@@ -304,6 +305,12 @@ export function createRealAIService(): AIAgentService {
         method: 'PATCH',
         body: JSON.stringify({ provider_modified_payload: payload }),
       });
+    },
+
+    async confirmDiagnoses(runId: string, _diagnoses: SuggestedDiagnosis[]): Promise<AgentRun> {
+      // Diagnoses are saved via the /api/patients/[id]/diagnoses endpoint from the hook.
+      // Just fetch the updated run status.
+      return this.getRunStatus(runId);
     },
   };
 }

@@ -33,7 +33,7 @@ export default async function PatientPage({ params }: Props) {
       .select('id, icd10_code, description, status, is_primary')
       .eq('patient_id', id)
       .eq('org_id', DEV_ORG_ID)
-      .eq('status', 'active')
+      .in('status', ['active', 'pending_review'] as unknown as ('active' | 'resolved' | 'ruled_out')[])
       .order('is_primary', { ascending: false }),
 
     supabase

@@ -1,4 +1,4 @@
-import type { ProcessingStep, Clarification, ProposedAction } from '@/lib/types/ai-agent';
+import type { ProcessingStep, Clarification, ProposedAction, SuggestedDiagnosis } from '@/lib/types/ai-agent';
 
 export interface MockScenario {
   id: string;
@@ -8,9 +8,68 @@ export interface MockScenario {
   /** Steps to run after clarifications are answered (if any) */
   postClarificationSteps?: { label: string; delayMs: number }[];
   proposedActions: ProposedAction[];
+  suggestedDiagnoses?: SuggestedDiagnosis[];
   summary: string;
   tokenUsage: { input: number; output: number };
 }
+
+// ── Scenario 0: Intake Assessment (with diagnosis confirmation) ──
+const intakeAssessment: MockScenario = {
+  id: 'intake-assessment',
+  triggerKeywords: ['intake', 'assessment'],
+  steps: [
+    { label: 'Loading patient context', delayMs: 800 },
+    { label: 'Analyzing session transcript', delayMs: 1200 },
+    { label: 'Generating intake assessment', delayMs: 1500 },
+    { label: 'Preparing clinical formulation', delayMs: 1000 },
+    { label: 'Finalizing documentation', delayMs: 600 },
+  ],
+  clarifications: [],
+  proposedActions: [
+    {
+      id: 'action-encounter',
+      actionType: 'encounter',
+      description: 'Create encounter for intake session',
+      payload: {
+        type: 'intake',
+        date: new Date().toISOString().split('T')[0],
+        duration_minutes: 60,
+        provider: 'Sarah Chen, LCSW',
+      },
+    },
+    {
+      id: 'action-note',
+      actionType: 'note',
+      description: 'Intake assessment note',
+      payload: {
+        format: 'intake',
+        note_type: 'intake',
+        content: {
+          chief_complaint: 'Patient presents with persistent worry, difficulty sleeping, and avoidance of social situations over the past 6 months. Reports that anxiety has worsened since starting a new job 3 months ago.',
+          history_of_present_illness: 'John Doe is a 34-year-old male presenting for an initial psychiatric evaluation. He reports a 6-month history of excessive worry about work performance, finances, and health. Symptoms include difficulty concentrating, muscle tension, restlessness, and chronic insomnia with sleep onset latency of 60+ minutes most nights. He has been avoiding social gatherings and work meetings due to fear of judgment. Symptoms have significantly impacted his daily functioning and work productivity.',
+          psychiatric_history: 'No prior psychiatric hospitalizations. No previous psychotherapy. No prior psychiatric medication trials. Denies history of self-harm or suicide attempts. Reports a period of mild depression in college that resolved without treatment.',
+          social_history: 'Lives alone in an apartment. Works as a software engineer (new position, 3 months). Limited social support — a few close friends but has been withdrawing. No current romantic relationship. Denies tobacco use. Reports occasional alcohol use (1-2 drinks/week, not to cope). No illicit substance use. Bachelor\'s degree in computer science. No legal history.',
+          family_history: 'Mother — history of generalized anxiety disorder, currently treated with sertraline. Father — no known psychiatric history. One sibling (sister) — no known psychiatric history. No family history of suicide, bipolar disorder, or psychotic disorders.',
+          mental_status_exam: 'Appearance: Well-groomed, casually dressed, appropriate for setting. Behavior: Cooperative, good eye contact, mild psychomotor agitation (fidgeting). Speech: Normal rate, slightly pressured when discussing work stressors. Mood: "Anxious." Affect: Anxious, congruent with mood, full range. Thought process: Linear, goal-directed, no loose associations. Thought content: Preoccupied with performance concerns, no suicidal/homicidal ideation, no delusions. Perception: No hallucinations. Cognition: Alert, oriented x4, concentration mildly impaired (self-report). Insight: Good — recognizes anxiety is excessive. Judgment: Good.',
+          risk_assessment: 'Suicide Risk: Low. No current SI/HI, no history of attempts, no access to lethal means. Protective factors include employment, social connections (though limited), and motivation for treatment. Safety plan not indicated at this time.',
+          diagnosis_formulation: 'Based on the clinical presentation, John meets DSM-5 criteria for Generalized Anxiety Disorder (F41.1) as evidenced by excessive anxiety and worry about multiple domains (work, finances, health) for more than 6 months, with associated symptoms of restlessness, difficulty concentrating, muscle tension, and sleep disturbance. Secondary diagnosis of Insomnia disorder (G47.00) is supported by chronic difficulty with sleep initiation, occurring at least 3 nights per week, causing significant distress and functional impairment independent of the anxiety disorder.',
+          treatment_recommendations: 'Recommended treatment approach: 1) Weekly individual psychotherapy using Cognitive Behavioral Therapy (CBT) for anxiety management, including psychoeducation, cognitive restructuring, and graded exposure. 2) Sleep hygiene education and stimulus control techniques for insomnia. 3) Consider psychiatric referral for medication evaluation if symptoms do not improve with therapy within 6-8 weeks. 4) GAD-7 and PHQ-9 to be administered at baseline and every 4 sessions to track progress.',
+        },
+      },
+      assumptions: [
+        'Session type: intake evaluation (60 min)',
+        'Primary concern: anxiety symptoms with secondary insomnia',
+        'No prior treatment history',
+      ],
+    },
+  ],
+  suggestedDiagnoses: [
+    { icd10_code: 'F41.1', description: 'Generalized anxiety disorder', is_primary: true },
+    { icd10_code: 'G47.00', description: 'Insomnia, unspecified', is_primary: false },
+  ],
+  summary: 'Generated intake assessment for John Doe. Diagnostic impression: F41.1 Generalized anxiety disorder (primary), G47.00 Insomnia (secondary).',
+  tokenUsage: { input: 3200, output: 2100 },
+};
 
 // ── Scenario 1: Progress Note (happy path) ──────────────────────
 const progressNote: MockScenario = {
@@ -214,7 +273,7 @@ const patientQuery: MockScenario = {
 
 // ── Exports ─────────────────────────────────────────────────────
 
-export const MOCK_SCENARIOS: MockScenario[] = [progressNote, medicationUpdate, treatmentPlan, patientQuery];
+export const MOCK_SCENARIOS: MockScenario[] = [intakeAssessment, progressNote, medicationUpdate, treatmentPlan, patientQuery];
 
 /** Pick a scenario by matching keywords in the user's input */
 export function matchScenario(input: string): MockScenario {
