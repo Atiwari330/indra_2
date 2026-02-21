@@ -11,7 +11,8 @@
     "test:run": "vitest run",
     "ws:dev": "npx tsx src/server/ws-server.ts",
     "db:push": "npx supabase db push",
-    "db:types": "npx supabase gen types typescript --project-id wkbfhvepiavfdhwmlnyf > src/lib/types/database.ts"
+    "db:types": "npx supabase gen types typescript --project-id wkbfhvepiavfdhwmlnyf > src/lib/types/database.ts",
+    "demo:reset": "tsx scripts/prep-demo.ts"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.39",
