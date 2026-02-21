@@ -9,6 +9,7 @@ import type {
   NoteEditResult,
   SuggestedDiagnosis,
 } from '@/lib/types/ai-agent';
+import { ICD10_MENTAL_HEALTH } from '@/lib/data/icd10-mental-health';
 
 // ── Mapping helpers ────────────────────────────────────────────
 
@@ -226,6 +227,78 @@ async function apiFetch<T>(
   }
 }
 
+// ── Diagnosis extraction helpers ────────────────────────────────
+
+function lookupICD10Description(code: string): string {
+  const entry = ICD10_MENTAL_HEALTH.find(c => c.code === code);
+  return entry?.description ?? code;
+}
+
+function extractDiagnosesFromActions(actions: ProposedAction[]): SuggestedDiagnosis[] {
+  const diagnoses: SuggestedDiagnosis[] = [];
+  const seen = new Set<string>();
+
+  // 1. Try treatment plan's structured diagnosis_codes first (most reliable)
+  const treatmentPlan = actions.find(a => a.actionType === 'treatment_plan');
+  if (treatmentPlan?.payload?.diagnosis_codes) {
+    const codes = treatmentPlan.payload.diagnosis_codes as string[];
+    for (let i = 0; i < codes.length; i++) {
+      const code = codes[i];
+      if (!seen.has(code)) {
+        seen.add(code);
+        diagnoses.push({
+          icd10_code: code,
+          description: lookupICD10Description(code),
+          is_primary: i === 0,
+        });
+      }
+    }
+  }
+
+  // 2. Try billing action's diagnosis codes
+  if (diagnoses.length === 0) {
+    const billing = actions.find(a => a.actionType === 'billing');
+    if (billing?.payload?.diagnoses) {
+      const dxList = billing.payload.diagnoses as Array<{ icd10_code: string }>;
+      for (let i = 0; i < dxList.length; i++) {
+        const code = dxList[i].icd10_code;
+        if (!seen.has(code)) {
+          seen.add(code);
+          diagnoses.push({
+            icd10_code: code,
+            description: lookupICD10Description(code),
+            is_primary: i === 0,
+          });
+        }
+      }
+    }
+  }
+
+  // 3. Fallback: parse ICD-10 codes from diagnosis_formulation text
+  if (diagnoses.length === 0) {
+    const intakeAction = actions.find(a => a.actionType === 'note');
+    const content = intakeAction?.payload?.content as Record<string, string> | undefined;
+    const formulation = content?.diagnosis_formulation;
+    if (formulation) {
+      const codePattern = /([A-Z]\d{2}(?:\.\d{1,3})?)/g;
+      let match;
+      while ((match = codePattern.exec(formulation)) !== null) {
+        const code = match[1];
+        if (!seen.has(code)) {
+          seen.add(code);
+          diagnoses.push({
+            icd10_code: code,
+            description: lookupICD10Description(code),
+            is_primary: diagnoses.length === 0,
+          });
+        }
+      }
+    }
+  }
+
+  return diagnoses;
+}
+
 // ── Service ────────────────────────────────────────────────────
 
 export function createRealAIService(): AIAgentService {
@@ -281,7 +354,27 @@ export function createRealAIService(): AIAgentService {
       });
 
       // Fetch final state
-      return this.getRunStatus(runId);
+      const run = await this.getRunStatus(runId);
+
+      // Check if this was an intake note commit — if so, extract suggested diagnoses
+      const intakeAction = run.proposedActions.find(
+        a => a.actionType === 'note' &&
+          ((a.payload.note_type as string) === 'intake' ||
+            a.description?.toLowerCase().includes('intake'))
+      );
+
+      if (intakeAction) {
+        const diagnoses = extractDiagnosesFromActions(run.proposedActions);
+        if (diagnoses.length > 0) {
+          return {
+            ...run,
+            status: 'confirming_diagnoses',
+            suggestedDiagnoses: diagnoses,
+          };
+        }
+      }
+
+      return run;
     },
 
     async editNote(

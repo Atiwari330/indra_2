@@ -28,6 +28,7 @@ export async function commitActionGroup(
   client: Client,
   groupId: string,
   providerId: string,
+  userId: string,
   orgId: string,
   patientId?: string | null
 ): Promise<CommitResult> {
@@ -70,7 +71,7 @@ export async function commitActionGroup(
         .update({
           status: 'committed',
           committed_at: new Date().toISOString(),
-          committed_by: providerId,
+          committed_by: userId,
         })
         .eq('id', action.id);
 

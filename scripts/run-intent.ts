@@ -159,7 +159,7 @@ async function handleCommit(client: ReturnType<typeof createAdminClient>, runId:
     }
 
     const groupId = pendingActions[0].action_group;
-    const commitResult = await commitActionGroup(client, groupId, PROVIDER_ID, ORG_ID);
+    const commitResult = await commitActionGroup(client, groupId, PROVIDER_ID, USER_ID, ORG_ID);
     console.log(`\nCommitted: ${commitResult.committed}/${commitResult.results.length} actions`);
     for (const r of commitResult.results) {
       console.log(`  ${r.success ? '✓' : '✗'} ${r.actionType}${r.error ? ': ' + r.error : ''}`);

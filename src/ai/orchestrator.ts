@@ -92,7 +92,11 @@ export async function runOrchestrator(
       if (stepNumber <= 2) {
         activeToolNames = [...lookupToolNames, ...terminalToolNames];
       } else if (stepNumber <= 7) {
-        activeToolNames = [...lookupToolNames, ...actionToolNames, ...terminalToolNames];
+        let filteredActionTools = [...actionToolNames];
+        if (systemPromptContext.intentType === 'create_intake_assessment') {
+          filteredActionTools = filteredActionTools.filter(t => t !== 'create_treatment_plan');
+        }
+        activeToolNames = [...lookupToolNames, ...filteredActionTools, ...terminalToolNames];
       } else {
         activeToolNames = [...terminalToolNames];
       }

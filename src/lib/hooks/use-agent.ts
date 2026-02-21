@@ -342,11 +342,15 @@ export function useAgent() {
     try {
       // 1. Save to database via API
       if (state.run.patientId) {
-        await fetch(`/api/patients/${state.run.patientId}/diagnoses`, {
+        const res = await fetch(`/api/patients/${state.run.patientId}/diagnoses`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ diagnoses, status: 'active', aiRunId: state.run.id }),
         });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error((body as { error?: string }).error ?? `Failed to save diagnoses: ${res.status}`);
+        }
       }
       // 2. Transition agent state to committed
       const updated = await serviceRef.current.confirmDiagnoses(state.run.id, diagnoses);

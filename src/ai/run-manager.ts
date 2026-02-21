@@ -62,6 +62,7 @@ export async function executeIntent(
     // 2. Update to running
     await aiRunService.updateRunStatus(client, run.id, 'running', {
       started_at: new Date().toISOString(),
+      patient_id: options.patientId,
     });
 
     // 3. Classify intent

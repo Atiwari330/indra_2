@@ -6,7 +6,8 @@
  * - Zero AI runs, drafts, transcription sessions
  * - sessions_used reset to 0
  * - One intake appointment for today at 14:00 UTC
- * - Jane Smith and Robert Johnson appointments for schedule padding
+ * - One follow-up therapy appointment for today at 15:30 UTC
+ * - Jane Smith (16:00) and Robert Johnson (17:00) appointments for schedule padding
  *
  * Re-runnable: safe to run repeatedly before each demo.
  *
@@ -189,36 +190,51 @@ async function main() {
       name: 'John Doe',
       type: 'intake',
       hour: 14,
+      minutes: 0,
       notes: 'Initial intake assessment — new patient',
+    },
+    {
+      id: JOHN_DOE_ID,
+      name: 'John Doe',
+      type: 'telehealth',
+      hour: 15,
+      minutes: 30,
+      notes: 'Follow-up therapy session — session 2',
     },
     {
       id: 'd0000000-0000-0000-0000-000000000002',
       name: 'Jane Smith',
       type: 'telehealth',
-      hour: 15,
+      hour: 16,
+      minutes: 0,
       notes: 'Follow-up session',
     },
     {
       id: 'd0000000-0000-0000-0000-000000000003',
       name: 'Robert Johnson',
       type: 'telehealth',
-      hour: 16,
+      hour: 17,
+      minutes: 0,
       notes: 'Progress review',
     },
   ];
 
-  for (const p of PATIENTS) {
-    const startTime = new Date(`${dateStr}T${String(p.hour).padStart(2, '0')}:00:00Z`);
-    const endTime = new Date(startTime.getTime() + 50 * 60 * 1000);
-
-    // Delete any existing appointment for this patient today first
+  // Delete existing today's appointments for each unique patient first
+  const uniquePatientIds = Array.from(new Set(PATIENTS.map((p) => p.id)));
+  for (const patientId of uniquePatientIds) {
     await client
       .from('appointments')
       .delete()
-      .eq('patient_id', p.id)
+      .eq('patient_id', patientId)
       .eq('provider_id', PROVIDER_ID)
       .gte('start_time', `${dateStr}T00:00:00Z`)
       .lt('start_time', `${dateStr}T23:59:59Z`);
+  }
+
+  // Insert all appointments
+  for (const p of PATIENTS) {
+    const startTime = new Date(`${dateStr}T${String(p.hour).padStart(2, '0')}:${String(p.minutes).padStart(2, '0')}:00Z`);
+    const endTime = new Date(startTime.getTime() + 50 * 60 * 1000);
 
     const { error } = await client.from('appointments').insert({
       patient_id: p.id,
@@ -266,7 +282,7 @@ async function main() {
     checks.push({ table, count: count ?? 0 });
   }
 
-  // Check appointments separately (should be exactly 1 — today's intake)
+  // Check appointments separately (should be exactly 2 — intake + follow-up)
   const { count: apptCount } = await client
     .from('appointments')
     .select('*', { count: 'exact', head: true })
@@ -276,12 +292,12 @@ async function main() {
   const allClear = checks
     .filter((c) => c.table !== 'appointments')
     .every((c) => c.count === 0);
-  const apptOk = (apptCount ?? 0) === 1;
+  const apptOk = (apptCount ?? 0) === 2;
 
   console.log('  Table                    Count  Status');
   console.log('  ─────────────────────────────────────────');
   for (const c of checks) {
-    const expected = c.table === 'appointments' ? 1 : 0;
+    const expected = c.table === 'appointments' ? 2 : 0;
     const status = c.count === expected ? '✓' : '✗ UNEXPECTED';
     console.log(`  ${c.table.padEnd(25)} ${String(c.count).padStart(3)}  ${status}`);
   }
@@ -297,13 +313,19 @@ async function main() {
   console.log('========================================');
   console.log('  Demo ready!');
   console.log('========================================\n');
-  console.log('Steps:');
+  console.log('Intake flow:');
   console.log('  1. npm run dev');
-  console.log('  2. Go to Schedule → click "Start Scribe" on John Doe\'s intake appointment');
+  console.log('  2. Go to Schedule → click "Start Scribe" on John Doe\'s 14:00 intake appointment');
   console.log('  3. Click "Load Demo Transcript" → intake transcript populates');
   console.log('  4. Click "Generate Intake" → AI creates intake assessment → Approve & Save');
   console.log('  5. Go to Clients → John Doe → click "Generate Treatment Plan" → Approve & Save');
   console.log('  6. Show the populated chart: diagnoses, medications, treatment plan, notes');
+  console.log('');
+  console.log('Progress note flow:');
+  console.log('  7. Go to Schedule → click "Start Scribe" on John Doe\'s 15:30 therapy appointment');
+  console.log('  8. Click "Load Demo Transcript" → session-2 transcript populates');
+  console.log('  9. Click "Generate Note" → AI creates progress note referencing treatment plan goals');
+  console.log('  10. Review the note — ties session content to treatment plan objectives');
   console.log('');
 }
 
