@@ -35,7 +35,7 @@ export async function POST(
     const groupId = pendingActions[0].action_group;
     console.log(`[commit] Committing group ${groupId} with ${pendingActions.length} action(s): ${pendingActions.map(a => a.action_type).join(', ')}`);
 
-    const result = await commitActionGroup(client, groupId, auth.providerId, auth.orgId);
+    const result = await commitActionGroup(client, groupId, auth.providerId, auth.orgId, details.run.patient_id);
     console.log(`[commit] Result: committed=${result.committed} | ${result.results.map(r => `${r.actionType}:${r.success ? 'OK' : 'FAIL'}${r.error ? '(' + r.error + ')' : ''}`).join(', ')}`);
 
     return jsonResponse(result);

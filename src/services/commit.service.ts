@@ -28,7 +28,8 @@ export async function commitActionGroup(
   client: Client,
   groupId: string,
   providerId: string,
-  orgId: string
+  orgId: string,
+  patientId?: string | null
 ): Promise<CommitResult> {
   // Load all pending actions in this group, ordered by action_order
   const { data: actions, error } = await client
@@ -53,7 +54,7 @@ export async function commitActionGroup(
     const resolvedPayload = resolveCrossRefs(payload, refs);
 
     try {
-      const result = await executeAction(client, orgId, providerId, action.action_type, resolvedPayload);
+      const result = await executeAction(client, orgId, providerId, action.action_type, resolvedPayload, patientId);
       console.log(`[commit.service] Action ${action.action_type} SUCCESS | result id: ${result && typeof result === 'object' && 'id' in result ? (result as { id: string }).id : 'none'}`);
 
       // Store the created ID for cross-references
@@ -198,14 +199,19 @@ async function executeAction(
   orgId: string,
   providerId: string,
   actionType: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  runPatientId?: string | null
 ): Promise<unknown> {
+  // Ensure patient_id is present — prefer payload, fall back to the run's patient_id
+  const effectivePatientId = (payload.patient_id as string) ?? runPatientId;
+
   switch (actionType) {
     case 'create_encounter': {
+      if (!effectivePatientId) throw new Error('create_encounter: missing patient_id');
       const result = await encounterService.resolveEncounter(
         client,
         orgId,
-        payload.patient_id as string,
+        effectivePatientId,
         providerId,
         payload.encounter_date as string,
         payload.encounter_type as Database['public']['Enums']['encounter_type'],
@@ -276,9 +282,11 @@ async function executeAction(
     }
 
     case 'create_appointment': {
-      validateRequiredFields(payload, 'create_appointment', ['patient_id', 'start_time', 'end_time']);
+      const apptPatientId = effectivePatientId;
+      if (!apptPatientId) throw new Error('create_appointment: missing patient_id');
+      validateRequiredFields(payload, 'create_appointment', ['start_time', 'end_time']);
       return appointmentService.createAppointment(client, orgId, {
-        patient_id: payload.patient_id as string,
+        patient_id: apptPatientId,
         provider_id: providerId,
         start_time: payload.start_time as string,
         end_time: payload.end_time as string,
@@ -288,7 +296,9 @@ async function executeAction(
     }
 
     case 'update_medication': {
-      validateRequiredFields(payload, 'update_medication', ['patient_id', 'name', 'dosage', 'frequency']);
+      const medPatientId = effectivePatientId;
+      if (!medPatientId) throw new Error('update_medication: missing patient_id');
+      validateRequiredFields(payload, 'update_medication', ['name', 'dosage', 'frequency']);
       // Discontinue old medication if specified
       if (payload.discontinue_medication_id) {
         await client
@@ -305,7 +315,7 @@ async function executeAction(
       const { data, error } = await client
         .from('medications')
         .insert({
-          patient_id: payload.patient_id as string,
+          patient_id: medPatientId,
           provider_id: providerId,
           org_id: orgId,
           name: payload.name as string,
@@ -323,10 +333,12 @@ async function executeAction(
     }
 
     case 'suggest_billing': {
-      validateRequiredFields(payload, 'suggest_billing', ['encounter_id', 'patient_id', 'date_of_service', 'diagnoses', 'line_items']);
+      const billingPatientId = effectivePatientId;
+      if (!billingPatientId) throw new Error('suggest_billing: missing patient_id');
+      validateRequiredFields(payload, 'suggest_billing', ['encounter_id', 'date_of_service', 'diagnoses', 'line_items']);
       return billingService.createClaim(client, orgId, {
         encounter_id: payload.encounter_id as string,
-        patient_id: payload.patient_id as string,
+        patient_id: billingPatientId,
         provider_id: providerId,
         patient_insurance_id: payload.patient_insurance_id as string | undefined,
         date_of_service: payload.date_of_service as string,
@@ -344,9 +356,11 @@ async function executeAction(
     }
 
     case 'generate_utilization_review': {
-      validateRequiredFields(payload, 'generate_utilization_review', ['patient_id', 'content']);
+      const urPatientId = effectivePatientId;
+      if (!urPatientId) throw new Error('generate_utilization_review: missing patient_id');
+      validateRequiredFields(payload, 'generate_utilization_review', ['content']);
       return urService.createUtilizationReview(client, orgId, providerId, {
-        patient_id: payload.patient_id as string,
+        patient_id: urPatientId,
         ai_run_id: payload.ai_run_id as string | undefined,
         review_type: (payload.review_type as 'initial' | 'concurrent' | 'retrospective') ?? 'concurrent',
         content: payload.content as Record<string, unknown>,
@@ -354,11 +368,13 @@ async function executeAction(
     }
 
     case 'create_treatment_plan': {
+      const tpPatientId = effectivePatientId;
+      if (!tpPatientId) throw new Error('create_treatment_plan: missing patient_id');
       validateRequiredFields(payload, 'create_treatment_plan', [
-        'patient_id', 'diagnosis_codes', 'goals', 'objectives', 'interventions', 'review_date',
+        'diagnosis_codes', 'goals', 'objectives', 'interventions', 'review_date',
       ]);
       return treatmentPlanService.createTreatmentPlan(client, orgId, providerId, {
-        patient_id: payload.patient_id as string,
+        patient_id: tpPatientId,
         ai_run_id: payload.ai_run_id as string | undefined,
         diagnosis_codes: payload.diagnosis_codes as string[],
         goals: payload.goals as Array<{ goal: string; target_date?: string }>,
