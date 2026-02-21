@@ -72,6 +72,32 @@ export const breatheOverlay = {
   exit: { opacity: 0, transition: { duration: 0.3 } },
 };
 
+// --- Assessment Flow Animations ---
+
+/** Assessment question slide forward (exit left, enter from right) */
+export const assessmentSlideForward = {
+  initial: { opacity: 0, x: 60 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
+  exit: { opacity: 0, x: -60, transition: { duration: 0.25, ease: 'easeInOut' } },
+};
+
+/** Assessment question slide backward (exit right, enter from left) */
+export const assessmentSlideBackward = {
+  initial: { opacity: 0, x: -60 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
+  exit: { opacity: 0, x: 60, transition: { duration: 0.25, ease: 'easeInOut' } },
+};
+
+/** Portal checkmark bouncy spring for completion */
+export const portalCheckmark = {
+  hidden: { scale: 0, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: 'spring' as const, duration: 0.6, bounce: 0.3 },
+  },
+};
+
 /**
  * Check if user prefers reduced motion.
  * Call in useEffect or event handlers — not during render.

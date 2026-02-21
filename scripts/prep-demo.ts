@@ -126,7 +126,10 @@ async function main() {
   await client.from('ai_runs').delete().eq('patient_id', JOHN_DOE_ID);
   console.log('  Deleted ai_runs');
 
-  // 13-14. Assessment scores → encounters
+  // 13-15. Assessment requests → assessment scores → encounters
+  await client.from('assessment_requests').delete().eq('patient_id', JOHN_DOE_ID);
+  console.log('  Deleted assessment_requests');
+
   await client.from('assessment_scores').delete().eq('patient_id', JOHN_DOE_ID);
   console.log('  Deleted assessment_scores');
 
@@ -264,6 +267,7 @@ async function main() {
   const tables = [
     'clinical_notes',
     'encounters',
+    'assessment_requests',
     'assessment_scores',
     'treatment_plans',
     'patient_diagnoses',
