@@ -6,6 +6,7 @@ import { PortalTabBar } from './portal-tab-bar';
 import { BreathingFab } from '../tools/breathing-fab';
 import { BreathingWidget } from '../tools/breathing-widget';
 import { AssessmentFlow } from '../assessments/assessment-flow';
+import { IntakeFlow } from '../intake/intake-flow';
 import type { ReactNode } from 'react';
 
 interface PatientInfo {
@@ -20,10 +21,27 @@ interface AssessmentItem {
   responses: Array<{ question_index: number; answer_value: number }> | null;
 }
 
+interface IntakePacketItem {
+  id: string;
+  item_key: string;
+  item_label: string;
+  item_type: string;
+  status: string;
+  sort_order: number;
+  responses: Record<string, unknown> | null;
+}
+
+interface IntakePacket {
+  id: string;
+  status: string;
+  items: IntakePacketItem[];
+}
+
 export function PortalShell({ children }: { children: ReactNode }) {
   const [patient, setPatient] = useState<PatientInfo | null>(null);
   const [breathingOpen, setBreathingOpen] = useState(false);
   const [assessmentData, setAssessmentData] = useState<AssessmentItem[] | null>(null);
+  const [intakeData, setIntakeData] = useState<IntakePacket | null>(null);
 
   useEffect(() => {
     fetch('/api/portal/me')
@@ -51,8 +69,24 @@ export function PortalShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('indra:portal-assessment', handler);
   }, []);
 
+  // Listen for intake flow start event from portal home page
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.packet) {
+        setIntakeData(detail.packet);
+      }
+    };
+    window.addEventListener('indra:portal-intake', handler);
+    return () => window.removeEventListener('indra:portal-intake', handler);
+  }, []);
+
   const handleAssessmentClose = useCallback(() => {
     setAssessmentData(null);
+  }, []);
+
+  const handleIntakeClose = useCallback(() => {
+    setIntakeData(null);
   }, []);
 
   return (
@@ -71,6 +105,12 @@ export function PortalShell({ children }: { children: ReactNode }) {
         <AssessmentFlow
           assessments={assessmentData}
           onClose={handleAssessmentClose}
+        />
+      )}
+      {intakeData && (
+        <IntakeFlow
+          packet={intakeData}
+          onClose={handleIntakeClose}
         />
       )}
     </div>

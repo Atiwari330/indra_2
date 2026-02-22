@@ -13,9 +13,10 @@ const isUUID = (s: string) => /^[0-9a-f]{8}-/i.test(s);
 interface NotificationItem {
   id: string;
   patient_id: string;
-  measure_type: string;
+  measure_type?: string;
   completed_at: string | null;
   patients: { first_name: string; last_name: string } | null;
+  type: 'assessment' | 'intake';
 }
 
 function useNotifications() {
@@ -23,13 +24,15 @@ function useNotifications() {
   const [items, setItems] = useState<NotificationItem[]>([]);
 
   const fetch_ = useCallback(() => {
-    fetch('/api/notifications/assessments')
-      .then((res) => res.json())
-      .then((data) => {
-        setCount(data.count ?? 0);
-        setItems(data.items ?? []);
-      })
-      .catch(() => {});
+    Promise.all([
+      fetch('/api/notifications/assessments').then((r) => r.json()).catch(() => ({ count: 0, items: [] })),
+      fetch('/api/notifications/intake').then((r) => r.json()).catch(() => ({ count: 0, items: [] })),
+    ]).then(([assessments, intake]) => {
+      const assessmentItems = (assessments.items ?? []).map((i: NotificationItem) => ({ ...i, type: 'assessment' as const }));
+      const intakeItems = (intake.items ?? []).map((i: NotificationItem) => ({ ...i, type: 'intake' as const }));
+      setCount((assessments.count ?? 0) + (intake.count ?? 0));
+      setItems([...intakeItems, ...assessmentItems]);
+    });
   }, []);
 
   useEffect(() => {
@@ -38,9 +41,12 @@ function useNotifications() {
     return () => clearInterval(interval);
   }, [fetch_]);
 
-  const markViewed = useCallback(async (id: string) => {
-    await fetch(`/api/notifications/assessments/${id}/viewed`, { method: 'POST' });
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const markViewed = useCallback(async (item: NotificationItem) => {
+    const endpoint = item.type === 'intake'
+      ? `/api/notifications/intake/${item.id}/viewed`
+      : `/api/notifications/assessments/${item.id}/viewed`;
+    await fetch(endpoint, { method: 'POST' });
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
     setCount((prev) => Math.max(0, prev - 1));
   }, []);
 
@@ -86,7 +92,7 @@ export function TopBar() {
   }, [dropdownOpen]);
 
   const handleNotificationClick = useCallback(async (item: NotificationItem) => {
-    await markViewed(item.id);
+    await markViewed(item);
     setDropdownOpen(false);
     router.push(`/clients/${item.patient_id}`);
   }, [markViewed, router]);
@@ -207,7 +213,7 @@ export function TopBar() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-callout" style={{ color: 'var(--color-text-primary)' }}>
-                            {item.patients?.first_name} {item.patients?.last_name} completed a check-in
+                            {item.patients?.first_name} {item.patients?.last_name} completed {item.type === 'intake' ? 'intake paperwork' : 'a check-in'}
                           </p>
                           <p className="text-caption" style={{ color: 'var(--color-text-tertiary)' }}>
                             {relativeTime(item.completed_at)}

@@ -26,6 +26,8 @@ import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
 import { DiagnosisConfirmationPanel } from '@/components/clinical/diagnosis-confirmation-panel';
 import { AssessmentCard } from '@/components/clinical/assessment-card';
+import { IntakePaperworkCard } from '@/components/clinical/intake-paperwork-card';
+import { SendIntakePopover } from '@/components/clinical/send-intake-popover';
 import type { EvidenceItem } from '@/lib/types/ai-agent';
 import { formatDate, computeAge, formatName } from '@/lib/format';
 import { staggerContainer, cardItem, smooth } from '@/lib/animations';
@@ -104,6 +106,7 @@ interface PatientDetailProps {
     completed_at: string | null;
     responses: Array<{ question_index: number; answer_value: number }> | null;
   }[];
+  intakePacketStatus: string | null;
 }
 
 export function PatientDetail({
@@ -119,6 +122,7 @@ export function PatientDetail({
   consentMilestone,
   completedEncounterCount,
   assessmentRequests,
+  intakePacketStatus,
 }: PatientDetailProps) {
   const { submitIntent } = useAgentContext();
   const router = useRouter();
@@ -218,27 +222,28 @@ export function PatientDetail({
     return items;
   }, [activeDiagnoses, medications, treatmentPlan, recentNotes, latestTranscriptionSessionId]);
 
-  // ── Consent milestone toggle (optimistic) ──
-  const [consentComplete, setConsentComplete] = useState(consentMilestone !== null);
+  // ── Intake paperwork state ──
+  const [intakeStatus, setIntakeStatus] = useState<string | null>(intakePacketStatus);
+  const [showIntakePopover, setShowIntakePopover] = useState(false);
+  const consentComplete = intakeStatus === 'completed' || consentMilestone !== null;
 
-  const handleConsentToggle = useCallback(async (value: boolean) => {
-    setConsentComplete(value);
-    try {
-      if (value) {
-        await fetch(`/api/patients/${patient.id}/milestones`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ milestone_type: 'consent_intake_forms', completed: true }),
-        });
-      } else {
-        await fetch(`/api/patients/${patient.id}/milestones`, {
-          method: 'DELETE',
-        });
-      }
-    } catch {
-      setConsentComplete(!value); // revert on failure
-    }
-  }, [patient.id]);
+  const handleIntakeSent = useCallback(() => {
+    setIntakeStatus('pending');
+    setShowIntakePopover(false);
+  }, []);
+
+  // Poll for intake packet status updates
+  useEffect(() => {
+    if (!intakeStatus || intakeStatus === 'completed') return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/patients/${patient.id}/intake-packet`);
+        const data = await res.json();
+        if (data?.status) setIntakeStatus(data.status);
+      } catch { /* ignore */ }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [intakeStatus, patient.id]);
 
   // ── Tracker step derivation ──
   const trackerSteps = useMemo<TrackerStep[]>(() => {
@@ -272,10 +277,14 @@ export function PatientDetail({
         key: 'consent',
         label: 'Consent & Intake Forms',
         status: s1,
-        subtitle: s1 === 'complete' ? 'Completed' : undefined,
-        isManualToggle: true,
-        toggleValue: consentComplete,
-        onToggle: handleConsentToggle,
+        subtitle: s1 === 'complete'
+          ? 'Completed'
+          : intakeStatus === 'pending' || intakeStatus === 'in_progress'
+          ? 'Sent \u00B7 Waiting for patient'
+          : undefined,
+        ...(s1 !== 'complete' && !intakeStatus
+          ? { cta: { label: 'Send Intake Paperwork', action: () => setShowIntakePopover(true) } }
+          : {}),
       },
       {
         key: 'intake',
@@ -332,7 +341,7 @@ export function PatientDetail({
         },
       },
     ];
-  }, [consentComplete, hasIntakeNote, activeDiagnoses, pendingDiagnoses, treatmentPlan, completedEncounterCount, notes, patient.id, latestTranscriptionSessionId, evidence, submitIntent, handleConsentToggle]);
+  }, [consentComplete, hasIntakeNote, activeDiagnoses, pendingDiagnoses, treatmentPlan, completedEncounterCount, notes, patient.id, latestTranscriptionSessionId, evidence, submitIntent, intakeStatus]);
 
   const allComplete = trackerSteps.every((s) => s.status === 'complete');
 
@@ -594,6 +603,11 @@ export function PatientDetail({
               </InfoCard>
             </motion.div>
 
+            {/* Intake Paperwork */}
+            <motion.div variants={cardItem}>
+              <IntakePaperworkCard patientId={patient.id} patientFirstName={patient.first_name} />
+            </motion.div>
+
             {/* Assessments */}
             <motion.div variants={cardItem}>
               <AssessmentCard patientId={patient.id} patientFirstName={patient.first_name} />
@@ -721,6 +735,16 @@ export function PatientDetail({
           router.refresh();
         }}
       />
+
+      {/* Send Intake Paperwork Popover */}
+      {showIntakePopover && (
+        <SendIntakePopover
+          patientId={patient.id}
+          patientFirstName={patient.first_name}
+          onClose={() => setShowIntakePopover(false)}
+          onSent={handleIntakeSent}
+        />
+      )}
     </div>
   );
 }

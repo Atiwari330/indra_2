@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Greeting } from '@/components/portal/home/greeting';
 import { NextAppointment } from '@/components/portal/home/next-appointment';
+import { PendingIntakeCard } from '@/components/portal/home/pending-intake';
 import { PendingAssessmentCard } from '@/components/portal/home/pending-assessment';
 import { MoodMoment } from '@/components/portal/home/mood-moment';
 import { WellnessSnapshot } from '@/components/portal/home/wellness-snapshot';
@@ -20,6 +21,21 @@ interface PendingAssessment {
   responses: Array<{ question_index: number; answer_value: number }> | null;
 }
 
+interface IntakePacketItem {
+  id: string;
+  item_key: string;
+  item_label: string;
+  item_type: string;
+  status: string;
+  sort_order: number;
+}
+
+interface IntakePacket {
+  id: string;
+  status: string;
+  items: IntakePacketItem[];
+}
+
 export default function PortalHomePage() {
   const [patient, setPatient] = useState<PatientInfo | null>(null);
 
@@ -33,9 +49,14 @@ export default function PortalHomePage() {
   }, []);
 
   const handleBeginAssessment = (assessments: PendingAssessment[]) => {
-    // Dispatch custom event for portal shell to open the assessment flow
     window.dispatchEvent(
       new CustomEvent('indra:portal-assessment', { detail: { assessments } })
+    );
+  };
+
+  const handleBeginIntake = (packet: IntakePacket) => {
+    window.dispatchEvent(
+      new CustomEvent('indra:portal-intake', { detail: { packet } })
     );
   };
 
@@ -45,6 +66,7 @@ export default function PortalHomePage() {
         firstName={patient?.first_name ?? ''}
       />
       <NextAppointment />
+      <PendingIntakeCard onBegin={handleBeginIntake} />
       <PendingAssessmentCard onBegin={handleBeginAssessment} />
       <MoodMoment />
       <WellnessSnapshot />

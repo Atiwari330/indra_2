@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PatientDetail } from './patient-detail';
+import { getIntakePacket } from '@/services/intake-packet.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,6 +125,15 @@ export default async function PatientPage({ params }: Props) {
       .order('requested_at', { ascending: false }),
   ]);
 
+  // Fetch intake packet status (separate due to untyped table)
+  let intakePacketStatus: string | null = null;
+  try {
+    const packet = await getIntakePacket(supabase, id, DEV_ORG_ID);
+    intakePacketStatus = packet?.status ?? null;
+  } catch {
+    // Table may not exist yet if migration hasn't been pushed
+  }
+
   return (
     <PatientDetail
       patient={patient}
@@ -153,6 +163,7 @@ export default async function PatientPage({ params }: Props) {
         ...r,
         responses: r.responses as unknown as Array<{ question_index: number; answer_value: number }> | null,
       }))}
+      intakePacketStatus={intakePacketStatus}
     />
   );
 }
