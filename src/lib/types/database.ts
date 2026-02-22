@@ -997,6 +997,140 @@ export type Database = {
           },
         ]
       }
+      intake_packet_items: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          item_key: string
+          item_label: string
+          item_type: Database["public"]["Enums"]["intake_item_type"]
+          org_id: string
+          packet_id: string
+          patient_id: string
+          responses: Json | null
+          signature_name: string | null
+          signed_at: string | null
+          sort_order: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["intake_item_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          item_key: string
+          item_label: string
+          item_type: Database["public"]["Enums"]["intake_item_type"]
+          org_id: string
+          packet_id: string
+          patient_id: string
+          responses?: Json | null
+          signature_name?: string | null
+          signed_at?: string | null
+          sort_order?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["intake_item_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          item_key?: string
+          item_label?: string
+          item_type?: Database["public"]["Enums"]["intake_item_type"]
+          org_id?: string
+          packet_id?: string
+          patient_id?: string
+          responses?: Json | null
+          signature_name?: string | null
+          signed_at?: string | null
+          sort_order?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["intake_item_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_packet_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_packet_items_packet_id_fkey"
+            columns: ["packet_id"]
+            isOneToOne: false
+            referencedRelation: "intake_packets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_packet_items_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_packets: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          org_id: string
+          patient_id: string
+          provider_id: string
+          provider_viewed_at: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["intake_packet_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          patient_id: string
+          provider_id: string
+          provider_viewed_at?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["intake_packet_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          patient_id?: string
+          provider_id?: string
+          provider_viewed_at?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["intake_packet_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_packets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_packets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_packets_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medications: {
         Row: {
           change_reason: string | null
@@ -2121,6 +2255,9 @@ export type Database = {
         | "telehealth"
         | "medication_management"
       insurance_priority: "primary" | "secondary" | "tertiary"
+      intake_item_status: "pending" | "in_progress" | "completed"
+      intake_item_type: "consent_document" | "intake_questionnaire"
+      intake_packet_status: "pending" | "in_progress" | "completed"
       medication_status: "active" | "discontinued" | "changed"
       mood_level: "great" | "good" | "okay" | "low" | "rough"
       note_draft_status: "pending_review" | "accepted" | "rejected"
@@ -2324,6 +2461,9 @@ export const Constants = {
         "medication_management",
       ],
       insurance_priority: ["primary", "secondary", "tertiary"],
+      intake_item_status: ["pending", "in_progress", "completed"],
+      intake_item_type: ["consent_document", "intake_questionnaire"],
+      intake_packet_status: ["pending", "in_progress", "completed"],
       medication_status: ["active", "discontinued", "changed"],
       mood_level: ["great", "good", "okay", "low", "rough"],
       note_draft_status: ["pending_review", "accepted", "rejected"],

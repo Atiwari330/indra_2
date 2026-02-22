@@ -1,13 +1,6 @@
 import type { AdminClient } from '@/lib/supabase/admin';
+import type { Json } from '@/lib/types/database';
 import { INTAKE_PACKET_ITEMS } from '@/lib/data/intake-content';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedClient = any;
-
-/** Cast admin client for intake tables (not yet in generated types) */
-function db(client: AdminClient): UntypedClient {
-  return client;
-}
 
 // ── Create ──────────────────────────────────────────────────────
 
@@ -18,7 +11,7 @@ export async function createIntakePacket(
   orgId: string
 ) {
   // Create the packet
-  const { data: packet, error: packetError } = await db(client)
+  const { data: packet, error: packetError } = await client
     .from('intake_packets')
     .insert({
       patient_id: patientId,
@@ -41,7 +34,7 @@ export async function createIntakePacket(
     sort_order: item.sort_order,
   }));
 
-  const { error: itemsError } = await db(client)
+  const { error: itemsError } = await client
     .from('intake_packet_items')
     .insert(items);
 
@@ -57,7 +50,7 @@ export async function getIntakePacket(
   patientId: string,
   orgId: string
 ) {
-  const { data, error } = await db(client)
+  const { data, error } = await client
     .from('intake_packets')
     .select('*')
     .eq('patient_id', patientId)
@@ -75,7 +68,7 @@ export async function getIntakePacketWithItems(
   patientId: string,
   orgId: string
 ) {
-  const { data: packet, error: packetError } = await db(client)
+  const { data: packet, error: packetError } = await client
     .from('intake_packets')
     .select('*')
     .eq('patient_id', patientId)
@@ -87,7 +80,7 @@ export async function getIntakePacketWithItems(
   if (packetError) throw new Error(`Failed to fetch intake packet: ${packetError.message}`);
   if (!packet) return null;
 
-  const { data: items, error: itemsError } = await db(client)
+  const { data: items, error: itemsError } = await client
     .from('intake_packet_items')
     .select('*')
     .eq('packet_id', packet.id)
@@ -105,7 +98,7 @@ export async function getPendingPortalIntakePacket(
   patientId: string,
   orgId: string
 ) {
-  const { data: packet, error: packetError } = await db(client)
+  const { data: packet, error: packetError } = await client
     .from('intake_packets')
     .select('*')
     .eq('patient_id', patientId)
@@ -118,7 +111,7 @@ export async function getPendingPortalIntakePacket(
   if (packetError) throw new Error(`Failed to fetch pending intake packet: ${packetError.message}`);
   if (!packet) return null;
 
-  const { data: items, error: itemsError } = await db(client)
+  const { data: items, error: itemsError } = await client
     .from('intake_packet_items')
     .select('*')
     .eq('packet_id', packet.id)
@@ -137,7 +130,7 @@ export async function startIntakePacketItem(
   packetId: string
 ) {
   // Mark the item as in_progress
-  const { error: itemError } = await db(client)
+  const { error: itemError } = await client
     .from('intake_packet_items')
     .update({
       status: 'in_progress',
@@ -148,7 +141,7 @@ export async function startIntakePacketItem(
   if (itemError) throw new Error(`Failed to start intake item: ${itemError.message}`);
 
   // Also mark the packet as in_progress if it's still pending
-  const { error: packetError } = await db(client)
+  const { error: packetError } = await client
     .from('intake_packets')
     .update({ status: 'in_progress' })
     .eq('id', packetId)
@@ -164,9 +157,9 @@ export async function saveIntakeItemProgress(
   itemId: string,
   responses: Record<string, unknown>
 ) {
-  const { error } = await db(client)
+  const { error } = await client
     .from('intake_packet_items')
-    .update({ responses: responses as unknown as Record<string, unknown> })
+    .update({ responses: responses as unknown as Json })
     .eq('id', itemId);
 
   if (error) throw new Error(`Failed to save intake item progress: ${error.message}`);
@@ -179,7 +172,7 @@ export async function completeConsentItem(
   itemId: string,
   signatureName: string
 ) {
-  const { error } = await db(client)
+  const { error } = await client
     .from('intake_packet_items')
     .update({
       status: 'completed',
@@ -197,11 +190,11 @@ export async function completeQuestionnaireItem(
   itemId: string,
   responses: Record<string, unknown>
 ) {
-  const { error } = await db(client)
+  const { error } = await client
     .from('intake_packet_items')
     .update({
       status: 'completed',
-      responses: responses as unknown as Record<string, unknown>,
+      responses: responses as unknown as Json,
       completed_at: new Date().toISOString(),
     })
     .eq('id', itemId);
@@ -216,17 +209,17 @@ export async function checkAndCompletePacket(
   packetId: string
 ) {
   // Check if all items are completed
-  const { data: items, error: itemsError } = await db(client)
+  const { data: items, error: itemsError } = await client
     .from('intake_packet_items')
     .select('status')
     .eq('packet_id', packetId);
 
   if (itemsError) throw new Error(`Failed to check packet items: ${itemsError.message}`);
 
-  const allCompleted = items?.every((item: { status: string }) => item.status === 'completed');
+  const allCompleted = items?.every((item) => item.status === 'completed');
 
   if (allCompleted) {
-    const { error } = await db(client)
+    const { error } = await client
       .from('intake_packets')
       .update({
         status: 'completed',
@@ -244,7 +237,7 @@ export async function checkAndCompletePacket(
 // ── Notifications (Provider) ────────────────────────────────────
 
 export async function markIntakePacketViewed(client: AdminClient, packetId: string) {
-  const { error } = await db(client)
+  const { error } = await client
     .from('intake_packets')
     .update({ provider_viewed_at: new Date().toISOString() })
     .eq('id', packetId);
@@ -257,7 +250,7 @@ export async function getUnviewedCompletedIntakeCount(
   providerId: string,
   orgId: string
 ): Promise<number> {
-  const { count, error } = await db(client)
+  const { count, error } = await client
     .from('intake_packets')
     .select('*', { count: 'exact', head: true })
     .eq('provider_id', providerId)
@@ -274,7 +267,7 @@ export async function getUnviewedCompletedIntake(
   providerId: string,
   orgId: string
 ) {
-  const { data, error } = await db(client)
+  const { data, error } = await client
     .from('intake_packets')
     .select(`
       id,
