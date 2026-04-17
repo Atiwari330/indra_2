@@ -12,7 +12,7 @@ export async function GET(
 
     const { data: note, error } = await client
       .from('clinical_notes')
-      .select('id, note_type, content, status, created_at, signed_at, signed_by, encounter_id')
+      .select('id, note_type, content, status, created_at, signed_at, signed_by, encounter_id, patient_id')
       .eq('id', id)
       .eq('org_id', auth.orgId)
       .single();
