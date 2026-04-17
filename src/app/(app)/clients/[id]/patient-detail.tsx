@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   Stethoscope,
@@ -21,7 +21,8 @@ import { AIInputBar } from '@/components/ai/ai-input-bar';
 import { ClinicalProgressTracker } from '@/components/clinical/clinical-progress-tracker';
 import type { TrackerStep } from '@/components/clinical/clinical-progress-tracker';
 import { useAgentContext } from '@/components/ai/agent-provider';
-import { NoteDetail } from '@/components/notes/note-detail';
+import { NoteDetail, type NoteData } from '@/components/notes/note-detail';
+import { PhaseClaimReview } from '@/components/billing/phase-claim-review';
 import { URDetail } from '@/components/notes/ur-detail';
 import { TreatmentPlanDetail } from '@/components/notes/treatment-plan-detail';
 import { DiagnosisConfirmationPanel } from '@/components/clinical/diagnosis-confirmation-panel';
@@ -130,6 +131,7 @@ export function PatientDetail({
   const [selectedURId, setSelectedURId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showDiagnosisConfirmation, setShowDiagnosisConfirmation] = useState(false);
+  const [billClaimNote, setBillClaimNote] = useState<NoteData | null>(null);
 
   // Split diagnoses into active and pending
   const activeDiagnoses = useMemo(() => diagnoses.filter((d) => d.status === 'active'), [diagnoses]);
@@ -710,7 +712,37 @@ export function PatientDetail({
         noteId={selectedNoteId}
         onClose={() => setSelectedNoteId(null)}
         onSigned={handleNoteSigned}
+        onBillClaimClick={(note) => {
+          setBillClaimNote(note);
+          setSelectedNoteId(null);
+        }}
       />
+
+      {/* Bill Claim Flow */}
+      <AnimatePresence>
+        {billClaimNote && (
+          <PhaseClaimReview
+            key={billClaimNote.id}
+            onClose={() => setBillClaimNote(null)}
+            patient={{
+              id: patient.id,
+              first_name: patient.first_name,
+              last_name: patient.last_name,
+              dob: patient.dob,
+              gender: patient.gender,
+            }}
+            diagnoses={activeDiagnoses.map((d) => ({
+              icd10_code: d.icd10_code,
+              description: d.description,
+              is_primary: d.is_primary,
+            }))}
+            note={billClaimNote}
+            providerCredentials="LCSW"
+            encounterDurationMinutes={53}
+            encounterType="individual_therapy"
+          />
+        )}
+      </AnimatePresence>
 
       {/* UR Viewer */}
       <URDetail

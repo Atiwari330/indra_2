@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Users, Calendar, Settings, HelpCircle } from 'lucide-react';
+import { Users, Calendar, Receipt, Settings, HelpCircle } from 'lucide-react';
 import { useSidebar } from './sidebar-provider';
 import { SidebarNavItem } from './sidebar-nav-item';
 import { Avatar } from '../ui/avatar';
@@ -10,6 +10,7 @@ import { gentle } from '@/lib/animations';
 const navItems = [
   { href: '/clients', label: 'Clients', icon: Users },
   { href: '/schedule', label: 'Schedule', icon: Calendar },
+  { href: '/billing', label: 'Billing', icon: Receipt },
 ];
 
 export function Sidebar() {

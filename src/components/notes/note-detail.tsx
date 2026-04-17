@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, FileSignature, Loader2 } from 'lucide-react';
+import { X, Check, FileSignature, Loader2, Receipt } from 'lucide-react';
 import { slideOver, backdropFade } from '@/lib/animations';
 import { SOAPNoteContent } from './soap-note-content';
 import { IntakeNoteContent } from './intake-note-content';
 
-interface NoteData {
+export interface NoteData {
   id: string;
   note_type: string;
   content: Record<string, string>;
@@ -15,15 +15,18 @@ interface NoteData {
   created_at: string;
   signed_at: string | null;
   signed_by: string | null;
+  encounter_id: string | null;
+  patient_id: string | null;
 }
 
 interface NoteDetailProps {
   noteId: string | null;
   onClose: () => void;
   onSigned?: (noteId: string) => void;
+  onBillClaimClick?: (note: NoteData) => void;
 }
 
-export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
+export function NoteDetail({ noteId, onClose, onSigned, onBillClaimClick }: NoteDetailProps) {
   const [note, setNote] = useState<NoteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -193,18 +196,30 @@ export function NoteDetail({ noteId, onClose, onSigned }: NoteDetailProps) {
                     {signing ? 'Signing...' : 'Sign Note'}
                   </button>
                 ) : (
-                  <div className="flex items-center justify-center gap-1.5 py-2">
-                    <Check size={14} style={{ color: 'var(--color-success)' }} />
-                    <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
-                      Signed
-                      {note.signed_at && (
-                        <> &middot; {new Date(note.signed_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}</>
-                      )}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Check size={14} style={{ color: 'var(--color-success)' }} />
+                      <span className="text-caption" style={{ color: 'var(--color-text-secondary)' }}>
+                        Signed
+                        {note.signed_at && (
+                          <> &middot; {new Date(note.signed_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}</>
+                        )}
+                      </span>
+                    </div>
+                    {onBillClaimClick && note.note_type !== 'intake' && note.note_type !== 'treatment_plan' && (
+                      <button
+                        onClick={() => onBillClaimClick(note)}
+                        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 py-2.5 text-callout font-semibold text-white transition-opacity"
+                        style={{ background: 'var(--color-accent)' }}
+                      >
+                        <Receipt size={14} strokeWidth={1.8} />
+                        Bill Claim
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

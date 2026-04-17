@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js dev server (provider + portal UI)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "WebSocket transcription server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "ws:dev"],
+      "port": 3001
+    }
+  ]
+}
